@@ -53,7 +53,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ClassLibrary1\ConfigInfo.csproj">
+    <ProjectReference Include="..\ConfigInfo\ConfigInfo.csproj">
       <Project>{7b8dca42-3a7e-4b73-bbac-f54a3fae2b04}</Project>
       <Name>ConfigInfo</Name>
     </ProjectReference>
