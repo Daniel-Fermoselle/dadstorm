@@ -30,7 +30,9 @@ namespace Dadstorm
 
         public ConfigInfo()
         {
-
+            sourceInput = new ArrayList();
+            urls = new ArrayList();
+            operationParam = new ArrayList();
         }
 
         public string OperatorId
@@ -66,7 +68,7 @@ namespace Dadstorm
         public string Operation
         {
             set { operation = value; }
-            get { return operation; }
+            get { return operation;  }
         }
 
         public ArrayList OperationParam
@@ -75,9 +77,19 @@ namespace Dadstorm
             get { return operationParam;  }
         }
 
-        /*
-         * TODO add method to add elements to ArrayList atributes
-         * if necessary
-         *///
+        public void AddSourceInput(string toAdd)
+        {
+            sourceInput.Add(toAdd);
+        }
+
+        public void AddUrls(string toAdd)
+        {
+            urls.Add(toAdd);
+        }
+   
+        public void AddOperationParam(string toAdd)
+        {
+            operationParam.Add(toAdd);
+        }
     }
 }

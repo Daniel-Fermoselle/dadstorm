@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,16 +9,15 @@ namespace Dadstorm
     {
         private string[] lines;
         private int line;
+        private string loggingLvl;
 
-        public Parser(string path)
-        {
-        }
         public void readFile(string path)
         {
             if (path != "")
             {
                 lines = System.IO.File.ReadAllLines(path);
                 line = 0;
+                loggingLvl = "light";
             }
             else
             {
@@ -25,12 +25,18 @@ namespace Dadstorm
             }
         }
 
-        public ConfigInfo[] processFile()
+        public Dictionary<string, ConfigInfo> processFile()
         {
-
+            Dictionary < String, ConfigInfo > returnConfig = new Dictionary<String, ConfigInfo>();
+            while(line != lines.Length)
+            {
+                ConfigInfo ci = getOpConfig();
+                returnConfig.Add(ci.OperatorId, ci);
+            }
+            return returnConfig;
         }
 
-        public ConfigInfo getOpConfig()
+        private ConfigInfo getOpConfig()
         {
             //TODO need to add a variable to define a proper order to the file
             ConfigInfo configInfo = new ConfigInfo();
@@ -76,29 +82,65 @@ namespace Dadstorm
                     Console.Read();
                 }
             }
-            processLine4(currentLine, currentLine);
+            processLine4(configInfo, currentLine);
             return configInfo;
         }
 
-        public void processLine1(ConfigInfo configInfo, string currentLine)
+        private void processLine1(ConfigInfo configInfo, string currentLine)
         {
-            throw new NotImplementedException();
+            string[] splitedLine = currentLine.Split(' ');
+            configInfo.OperatorId = splitedLine[0];
+            if (splitedLine.Length > 3)
+            {
+                //Removes the ',' from the input and adds it to configInfo
+                for (int i = 2; i < splitedLine.Length; i++)
+                {
+                    configInfo.AddSourceInput(splitedLine[i].Remove(splitedLine[i].Length - 1));
+                }
+            }
+            configInfo.AddSourceInput(splitedLine[splitedLine.Length - 1]);
         }
 
         private void processLine2(ConfigInfo configInfo, string currentLine)
         {
-            throw new NotImplementedException();
+            string[] splitedLine = currentLine.Split(' ');
+            configInfo.RepFactor = Int32.Parse(splitedLine[1]);
+            configInfo.Routing = splitedLine[3];
         }
 
         private void processLine3(ConfigInfo configInfo, string currentLine)
         {
-            throw new NotImplementedException();
+            string[] splitedLine = currentLine.Split(' ');
+            if (splitedLine.Length > 2)
+            {
+                //Removes the ',' from the urls and adds them to configInfo
+                for (int i = 1; i < splitedLine.Length; i++)
+                {
+                    configInfo.AddUrls(splitedLine[i].Remove(splitedLine[i].Length - 1));
+                }
+            }
+            configInfo.AddUrls(splitedLine[splitedLine.Length - 1]);
         }
-        private void processLine4(string currentLine1, string currentLine2)
+
+        private void processLine4(ConfigInfo configInfo, string currentLine)
         {
-            throw new NotImplementedException();
+            string[] splitedLine = currentLine.Split(' ');
+            configInfo.Operation = splitedLine[1];
+            if(splitedLine.Length > 3)
+            {
+                //Removes the ',' from the input and adds it to configInfo
+                for (int i = 2; i < splitedLine.Length - 1; i++)
+                {
+                    configInfo.AddOperationParam(splitedLine[i].Remove(splitedLine[i].Length - 1));
+                }
+            }
+            configInfo.AddOperationParam(splitedLine[splitedLine.Length - 1]);
         }
 
-
+        public string LoggingLvl
+        {
+            get { return loggingLvl;  }
+            set { loggingLvl = value; }
+        }
     }
 }
