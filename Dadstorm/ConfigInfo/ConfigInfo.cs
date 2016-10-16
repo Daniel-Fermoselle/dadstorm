@@ -28,6 +28,11 @@ namespace Dadstorm
             this.operationParam = operationParam;
         }
 
+        public ConfigInfo()
+        {
+
+        }
+
         public string OperatorId
         {
             set { operatorId = value; }
