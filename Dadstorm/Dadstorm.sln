@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuppetMaster", "PuppetMaste
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigInfo", "ConfigInfo\ConfigInfo.csproj", "{7B8DCA42-3A7E-4B73-BBAC-F54A3FAE2B04}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcessCreationService", "ProcessCreationService\ProcessCreationService.csproj", "{9517E5AF-0F57-4173-9420-FEAE07402638}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PM-PCS-CommonClass", "PM-PCS-CommonClass\PM-PCS-CommonClass.csproj", "{560FEBC8-4804-46A2-A50B-608CF3ED54CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{7B8DCA42-3A7E-4B73-BBAC-F54A3FAE2B04}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B8DCA42-3A7E-4B73-BBAC-F54A3FAE2B04}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B8DCA42-3A7E-4B73-BBAC-F54A3FAE2B04}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9517E5AF-0F57-4173-9420-FEAE07402638}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9517E5AF-0F57-4173-9420-FEAE07402638}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9517E5AF-0F57-4173-9420-FEAE07402638}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9517E5AF-0F57-4173-9420-FEAE07402638}.Release|Any CPU.Build.0 = Release|Any CPU
+		{560FEBC8-4804-46A2-A50B-608CF3ED54CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{560FEBC8-4804-46A2-A50B-608CF3ED54CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{560FEBC8-4804-46A2-A50B-608CF3ED54CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{560FEBC8-4804-46A2-A50B-608CF3ED54CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
