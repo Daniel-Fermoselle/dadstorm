@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcessCreationService", "P
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PM-PCS-CommonClass", "PM-PCS-CommonClass\PM-PCS-CommonClass.csproj", "{560FEBC8-4804-46A2-A50B-608CF3ED54CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuppetMasterForm", "PuppetMasterForm\PuppetMasterForm.csproj", "{AAB5DAE6-DCE3-4548-83B2-9EF617EAE68F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{560FEBC8-4804-46A2-A50B-608CF3ED54CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{560FEBC8-4804-46A2-A50B-608CF3ED54CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{560FEBC8-4804-46A2-A50B-608CF3ED54CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAB5DAE6-DCE3-4548-83B2-9EF617EAE68F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAB5DAE6-DCE3-4548-83B2-9EF617EAE68F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAB5DAE6-DCE3-4548-83B2-9EF617EAE68F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAB5DAE6-DCE3-4548-83B2-9EF617EAE68F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,13 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Windows.Forms;
 
 namespace Dadstorm
 {
-    class PuppetMaster
+    public class PuppetMaster
     {
+        private Form form;
+        private Delegate printToForm;
 
-        static void Main(string[] args)
+        public PuppetMaster(Form form, Delegate printToForm)
+        {
+            this.form = form;
+            this.printToForm = printToForm;
+        }
+
+        public void StartProcessesPhase ()
         {
             //Start processes phase
             Parser p = new Parser();
@@ -16,9 +24,8 @@ namespace Dadstorm
             result = p.processFile();
             foreach(string s in result.Keys)
             {
-                Console.WriteLine(s);
+                form.Invoke(printToForm, new object[] { s });
             }
-            Console.ReadLine();
             //Receive inputs and log phase
         }
 
