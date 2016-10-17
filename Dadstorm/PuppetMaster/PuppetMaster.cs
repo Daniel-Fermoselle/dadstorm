@@ -10,7 +10,15 @@ namespace Dadstorm
         static void Main(string[] args)
         {
             //Start processes phase
-
+            Parser p = new Parser();
+            p.readFile(@"C:\Users\sigma\Dropbox\repos\dadstorm\Exemplos\configEnunciado.txt");
+            Dictionary<string, ConfigInfo> result;
+            result = p.processFile();
+            foreach(string s in result.Keys)
+            {
+                Console.WriteLine(s);
+            }
+            Console.ReadLine();
             //Receive inputs and log phase
         }
 

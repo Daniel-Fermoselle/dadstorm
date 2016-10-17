@@ -13,7 +13,7 @@ namespace Dadstorm
 
         public void readFile(string path)
         {
-            if (path != "")
+            if (!path.Equals(""))
             {
                 lines = System.IO.File.ReadAllLines(path);
                 line = 0;
@@ -44,7 +44,7 @@ namespace Dadstorm
 
             string currentLine = lines[line];
             //Ignore white spaces in the beginning
-            while (lines[line].StartsWith("OPERATOR_SPEC", comparison))
+            while (!lines[line].StartsWith("OPERATOR_SPEC", comparison))
             {
                 currentLine = lines[line];
                 
@@ -82,7 +82,8 @@ namespace Dadstorm
                     Console.Read();
                 }
             }
-            processLine4(configInfo, currentLine);
+            processLine4(configInfo, lines[line]);
+            line += 1;
             return configInfo;
         }
 
@@ -93,7 +94,7 @@ namespace Dadstorm
             if (splitedLine.Length > 3)
             {
                 //Removes the ',' from the input and adds it to configInfo
-                for (int i = 2; i < splitedLine.Length; i++)
+                for (int i = 2; i < splitedLine.Length - 1; i++)
                 {
                     configInfo.AddSourceInput(splitedLine[i].Remove(splitedLine[i].Length - 1));
                 }
@@ -114,7 +115,7 @@ namespace Dadstorm
             if (splitedLine.Length > 2)
             {
                 //Removes the ',' from the urls and adds them to configInfo
-                for (int i = 1; i < splitedLine.Length; i++)
+                for (int i = 1; i < splitedLine.Length - 1; i++)
                 {
                     configInfo.AddUrls(splitedLine[i].Remove(splitedLine[i].Length - 1));
                 }
