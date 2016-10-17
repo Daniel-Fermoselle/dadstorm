@@ -28,11 +28,36 @@ namespace Dadstorm
         public Dictionary<string, ConfigInfo> processFile()
         {
             Dictionary < String, ConfigInfo > returnConfig = new Dictionary<String, ConfigInfo>();
-            while(line != lines.Length)
+            string currentLine = lines[line];
+            while (line != lines.Length)
             {
-                ConfigInfo ci = getOpConfig();
-                returnConfig.Add(ci.OperatorId, ci);
+                currentLine = lines[line];
+                if (lines[line].StartsWith("OP", StringComparison.InvariantCulture))
+                {
+                    ConfigInfo ci = getOpConfig();
+                    returnConfig.Add(ci.OperatorId, ci);
+                    continue;
+                }
+                else if (lines[line].Equals("", StringComparison.Ordinal))
+                {
+                    line += 1;
+                    continue;
+                }
+                else if (lines[line].StartsWith("LoggingLevel", StringComparison.Ordinal))
+                {
+                    string[] splitedLine = currentLine.Split(' ');
+                    LoggingLvl = splitedLine[1];
+                    line += 1;
+                    continue;
+                }
+                else
+                {
+                    //TODO throw exception
+                    Console.WriteLine("In class Parser method processFile else was reached");
+                    Console.Read();
+                }
             }
+           
             return returnConfig;
         }
 
