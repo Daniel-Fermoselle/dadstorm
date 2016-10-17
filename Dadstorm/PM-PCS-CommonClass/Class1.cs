@@ -15,6 +15,7 @@ namespace PM_PCS_CommonClass
         public void createOperator(/*args do operator*/) //mas depois tera de retornar um operator
         {
             //TODO
+            
         }
 
     }
