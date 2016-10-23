@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
@@ -8,6 +9,7 @@ namespace Dadstorm
     {
         private Form form;
         private Delegate printToForm;
+        private Dictionary<string, ConfigInfo> config;
 
         public PuppetMaster(Form form, Delegate printToForm)
         {
@@ -19,15 +21,31 @@ namespace Dadstorm
         {
             //Start processes phase
             Parser p = new Parser();
-            p.readFile(@"C:\Users\sigma\Dropbox\repos\dadstorm\Exemplos\configEnunciado.txt");
-            Dictionary<string, ConfigInfo> result;
-            result = p.processFile();
-            foreach(string s in result.Keys)
-            {
-                form.Invoke(printToForm, new object[] { s });
-            }
+            p.readFile(@"C:\Users\sigma\Dropbox\repos\dadstorm\Exemplos\dadstorm.config");
+            config = p.processFile();
+            Console.Read();
+
             //Receive inputs and log phase
         }
+        
+        private void StartProcesses()
+        {
+            foreach(string opx in config.Keys)
+            {
+                ConfigInfo c;
+                config.TryGetValue(opx, out c);
+                ArrayList urls = c.Urls;
+                foreach(string url in urls)
+                {
+                    //For each url contact the PCS in the ip of that url and tell his to creat a replica
+                }
+            }
+        }
+
+    /*    private string getIPfromUrl(string url)
+        {
+
+        }*///
 
         public void Start(string operator_id)
         {
