@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace PM_PCS_CommonClass
+namespace Dadstorm
 {
-    public class PCSServer : MarshalByRefObject
+    public class PCSServices : MarshalByRefObject
     {
-        public PCSServer()
+        public PCSServices()
         {
 
         }
-        public void createOperator(/*args do operator*/) //mas depois tera de retornar um operator
+        public void createOperator(RepInfo info) //mas depois tera de retornar um operator
         {
             //TODO
             

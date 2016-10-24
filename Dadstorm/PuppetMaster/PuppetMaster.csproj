@@ -56,6 +56,18 @@
       <Project>{7b8dca42-3a7e-4b73-bbac-f54a3fae2b04}</Project>
       <Name>ConfigInfo</Name>
     </ProjectReference>
+    <ProjectReference Include="..\PM-PCS-CommonClass\PM-PCS-CommonClass.csproj">
+      <Project>{560febc8-4804-46a2-a50b-608cf3ed54cc}</Project>
+      <Name>PM-PCS-CommonClass</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PM-Rep-CommonClass\PM-Rep-CommonClass.csproj">
+      <Project>{205f36e9-4d82-44c9-860d-e692d67967a9}</Project>
+      <Name>PM-Rep-CommonClass</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RepInfo\RepInfo.csproj">
+      <Project>{a4f4ef39-12fa-4825-a18c-3b77430364a0}</Project>
+      <Name>RepInfo</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
