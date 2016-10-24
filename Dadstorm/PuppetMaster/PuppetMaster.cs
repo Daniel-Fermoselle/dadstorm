@@ -29,10 +29,9 @@ namespace Dadstorm
         {
             //Start processes phase
             Parser p = new Parser();
-            p.readFile(@"C:\Users\sigma\Dropbox\repos\dadstorm\Exemplos\dadstorm.config");
+            p.readFile(@"C:\Users\sigma\Dropbox\repos\dadstorm\Exemplos\dadstorm.config"); //TODO tornar dinamico
             config = p.processFile();
-
-            //Receive inputs and log phase
+            StartProcesses();
         }
         
         private void StartProcesses()
@@ -45,19 +44,24 @@ namespace Dadstorm
                 foreach(string url in urls)
                 {
                     //For each url contact the PCS in the ip of that url and tell his to creat a replica
-                    String urlOnly = getIPfromUrl(url);
+                    String urlOnly = getIPFromUrl(url);
                     PCSServices pcs = getPCSServices("tcp://" + urlOnly + ":10001/PCSServer");
-                    RepInfo info = new RepInfo();
+                    RepInfo info = new RepInfo(c.Routing, c.Operation, c.OperationParam, getUrlsToSend(), getPortFromUrl(url));
                     //Set info to send
                     pcs.createOperator(info);
-
                 }
             }
         }
-        private string getIPfromUrl(string url)
+        private string getIPFromUrl(string url)
         {
             string[] splitedUrl = url.Split('/');
             return splitedUrl[2].Split(':')[0];
+        }
+
+        private string getPortFromUrl(string url)
+        {
+            string[] splitedUrl = url.Split('/');
+            return splitedUrl[2].Split(':')[1];
         }
 
         public void Start(string operator_id)
@@ -106,6 +110,34 @@ namespace Dadstorm
             //Getting the RepServices object 
             RepServices obj = (RepServices)Activator.GetObject(typeof(RepServices), url);
             return obj;
+        }
+
+        public Dictionary<string, Dictionary<string, ArrayList>> getUrlsToSend()
+        {
+            Dictionary<string, Dictionary<string, ArrayList>> toReturn = new Dictionary<string, Dictionary<string, ArrayList>>();
+            foreach (string OPX in config.Keys)
+            {
+                Dictionary<string, ArrayList> subDic = new Dictionary<string, ArrayList>();
+                foreach (string OPX2 in config.Keys)
+                {
+                    ArrayList outputs = new ArrayList();
+                    ConfigInfo c;
+                    config.TryGetValue(OPX2, out c);
+                    foreach(string input in c.SourceInput)
+                    {
+                        if (input.Equals(OPX))
+                        {
+                           foreach(string url in c.Urls)
+                            {
+                                outputs.Add(url);
+                            }
+                        }
+                    }
+                    subDic.Add(OPX2, outputs);
+                }
+                toReturn.Add(OPX, subDic);
+            }
+            return toReturn;
         }
     }
 }

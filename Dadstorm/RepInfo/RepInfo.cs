@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 
 namespace Dadstorm
 {
@@ -7,19 +8,23 @@ namespace Dadstorm
         private string routing;
         private string operator_spec;
         private ArrayList operator_param;
-        private ArrayList sendInfoUrls;
+        private Dictionary<string, Dictionary<string, ArrayList>> sendInfoUrls;
+        private string port;
 
         public RepInfo()
         {
 
         }
 
-        public RepInfo(string routing, string operator_spec, ArrayList operator_param, ArrayList sendInfoUrls)
+        public RepInfo(string routing, string operator_spec, ArrayList operator_param, 
+                       Dictionary<string, Dictionary<string, ArrayList>> sendInfoUrls,
+                       string port)
         {
             this.routing = routing;
             this.operator_spec = operator_spec;
             this.operator_param = operator_param;
             this.sendInfoUrls = sendInfoUrls;
+            this.port = port;
         }
 
         public string Routing
@@ -38,10 +43,15 @@ namespace Dadstorm
             set { operator_param = value; }
             get { return operator_param; }
         }
-        public ArrayList SendInfoUrls
+        public Dictionary<string, Dictionary<string, ArrayList>> SendInfoUrls
         {
             set { sendInfoUrls = value; }
             get { return sendInfoUrls; }
+        }
+        public string Port
+        {
+            set { port = value; }
+            get { return port; }
         }
 
         public void AddOperator_param(string toAdd)
@@ -49,9 +59,5 @@ namespace Dadstorm
             operator_param.Add(toAdd);
         }
 
-        public void AddSendInfoUrls(string toAdd)
-        {
-            sendInfoUrls.Add(toAdd);
-        }
     }
 }
