@@ -48,10 +48,11 @@ namespace Dadstorm
                     PCSServices pcs = getPCSServices("tcp://" + urlOnly + ":10001/PCSServer");
                     RepInfo info = new RepInfo(c.Routing, c.Operation, c.OperationParam, getUrlsToSend(), getPortFromUrl(url));
                     //Set info to send
-                    pcs.createOperator(info);
+                   // pcs.createOperator(info);
                 }
             }
         }
+
         private string getIPFromUrl(string url)
         {
             string[] splitedUrl = url.Split('/');
@@ -105,6 +106,7 @@ namespace Dadstorm
             PCSServices obj = (PCSServices)Activator.GetObject(typeof(PCSServices), url);
             return obj;
         }
+
         public RepServices getRepServices(string url)
         {
             //Getting the RepServices object 
