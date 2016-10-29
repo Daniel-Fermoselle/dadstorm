@@ -16,6 +16,8 @@ namespace Dadstorm
         private Delegate printToForm;
         private Dictionary<string, ConfigInfo> config;
         private Dictionary<string, ArrayList>  repServices;
+        private ArrayList commands;
+        private int nextCommand;
 
         public PuppetMaster(Form form, Delegate printToForm)
         {
@@ -39,6 +41,7 @@ namespace Dadstorm
             Parser p = new Parser();
             p.readFile(@"C:\Users\sigma\Dropbox\repos\dadstorm\Exemplos\dadstorm.config"); //TODO tornar dinamico
             config = p.processFile();
+            commands = p.Commands;
             StartProcesses();
         }
         
@@ -153,7 +156,53 @@ namespace Dadstorm
         public void ProcessComands()
         {
             //TODO: implement all in a row or step by step
+
         }
+
+        public void ProcessSingleCommand()
+        {
+            //TODO add if's to avoid wrong commands
+            if(commands == null)
+            {
+                //TODO throw exception no commands in config
+            }
+            String command = (string) commands[nextCommand];
+            nextCommand++;
+            string[] splitedCommand = command.Split(' ');
+            if (splitedCommand[0].StartsWith("Star"))
+            {
+                Start(splitedCommand[1]);
+            }
+            else if(splitedCommand[0].StartsWith("I"))
+            {
+                Interval(splitedCommand[1], splitedCommand[2]);
+            }
+            else if (splitedCommand[0].StartsWith("Stat"))
+            {
+                Status();
+            }
+            else if (splitedCommand[0].StartsWith("C"))
+            {
+                Crash(splitedCommand[1]);
+            }
+            else if (splitedCommand[0].StartsWith("F"))
+            {
+                Freeze(splitedCommand[1]);
+            }
+            else if (splitedCommand[0].StartsWith("U"))
+            {
+                Unfreeze(splitedCommand[1]);
+            }
+            else if (splitedCommand[0].StartsWith("W"))
+            {
+                Wait(splitedCommand[1]);
+            }
+            else
+            {
+                //TODO throw exception command does not exist
+            }
+        }
+
 
         public PCSServices getPCSServices(string url)
         {
