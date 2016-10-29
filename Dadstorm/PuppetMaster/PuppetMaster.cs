@@ -16,6 +16,9 @@ namespace Dadstorm
         private const string PCSSERVER_NAME = "PCSServer";
         private const string DEFAULT_LOGGING = "light";
 
+        public delegate void StartAsyncDelegate();
+        public delegate void IntervalAsyncDelegate(string x_ms);
+
         private Form form;
         private Delegate printToForm;
         private Dictionary<string, ConfigInfo> config;
@@ -88,8 +91,18 @@ namespace Dadstorm
             for (int i = 0; i < array.Count; i++)
             {
                 RepServices repS = (RepServices) array[i];
-                //TODO make this call Asynchronous
-                repS.Start();
+
+                //Asynchronous call without callback
+                // Create delegate to remote method
+                StartAsyncDelegate RemoteDel = new StartAsyncDelegate(repS.Start);
+
+                // Call delegate to remote method
+                IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
+
+                // Wait for the end of the call and then explictly call EndInvoke
+                RemAr.AsyncWaitHandle.WaitOne();
+                RemoteDel.EndInvoke(RemAr);
+                
                 SendToLog("Start " + operator_id);
             }
         }
@@ -101,8 +114,18 @@ namespace Dadstorm
             for (int i = 0; i < array.Count; i++)
             {
                 RepServices repS = (RepServices)array[i];
-                //TODO make this call Asynchronous
-                repS.Interval(x_ms);
+                
+                //Asynchronous call without callback
+                // Create delegate to remote method
+                IntervalAsyncDelegate RemoteDel = new IntervalAsyncDelegate(repS.Interval);
+
+                // Call delegate to remote method
+                IAsyncResult RemAr = RemoteDel.BeginInvoke(x_ms, null, null);
+
+                // Wait for the end of the call and then explictly call EndInvoke
+                RemAr.AsyncWaitHandle.WaitOne();
+                RemoteDel.EndInvoke(RemAr);
+
                 SendToLog("Interval " + operator_id + " " + x_ms);
             }
         }
@@ -116,8 +139,18 @@ namespace Dadstorm
                 for (int i = 0; i < array.Count; i++)
                 {
                     RepServices repS = (RepServices)array[i];
-                    //TODO make this call Asynchronous and report info in the project paper
-                    repS.Status();
+                    //TODO Maybe make this call receive callback 
+                    //Asynchronous call without callback
+                    // Create delegate to remote method
+                    StartAsyncDelegate RemoteDel = new StartAsyncDelegate(repS.Status);
+
+                    // Call delegate to remote method
+                    IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
+
+                    // Wait for the end of the call and then explictly call EndInvoke
+                    RemAr.AsyncWaitHandle.WaitOne();
+                    RemoteDel.EndInvoke(RemAr);
+
                     SendToLog("Status");
                 }
             }
@@ -125,22 +158,49 @@ namespace Dadstorm
 
         public void Crash(string processname)
         {
-            //TODO make this call Asynchronous
-            getRepServices(processname).Crash();
+            //Asynchronous call without callback
+            // Create delegate to remote method
+            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getRepServices(processname).Crash);
+
+            // Call delegate to remote method
+            IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
+
+            // Wait for the end of the call and then explictly call EndInvoke
+            RemAr.AsyncWaitHandle.WaitOne();
+            RemoteDel.EndInvoke(RemAr);
+
             SendToLog("Crash " + processname);
         }
 
         public void Freeze(string processname)
         {
-            //TODO make this call Asynchronous
-            getRepServices(processname).Freeze();
+            //Asynchronous call without callback
+            // Create delegate to remote method
+            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getRepServices(processname).Freeze);
+
+            // Call delegate to remote method
+            IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
+
+            // Wait for the end of the call and then explictly call EndInvoke
+            RemAr.AsyncWaitHandle.WaitOne();
+            RemoteDel.EndInvoke(RemAr);
+
             SendToLog("Freeze " + processname);
         }
 
         public void Unfreeze(string processname)
         {
-            //TODO make this call Asynchronous
-            getRepServices(processname).Unfreeze();
+            //Asynchronous call without callback
+            // Create delegate to remote method
+            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getRepServices(processname).Unfreeze);
+
+            // Call delegate to remote method
+            IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
+
+            // Wait for the end of the call and then explictly call EndInvoke
+            RemAr.AsyncWaitHandle.WaitOne();
+            RemoteDel.EndInvoke(RemAr);
+
             SendToLog("Unfreeze " + processname);
         }
 
