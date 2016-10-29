@@ -23,7 +23,7 @@ namespace Dadstorm
             }
             else
             {
-                //TODO Throw exception
+                throw new InvalidPathException();
             }
         }
 
@@ -65,9 +65,7 @@ namespace Dadstorm
                 }
                 else
                 {
-                    //TODO throw exception
-                    Console.WriteLine("In class Parser method processFile else was reached");
-                    Console.Read();
+                    throw new InvalidKeyWordException(currentLine);
                 }
             }
            
@@ -76,7 +74,6 @@ namespace Dadstorm
 
         private ConfigInfo getOpConfig()
         {
-            //TODO need to add a variable to define a proper order to the file
             ConfigInfo configInfo = new ConfigInfo();
             string[] splitedLine = lines[line].Split(' ');
            
@@ -95,8 +92,7 @@ namespace Dadstorm
         {
             if (!splitedLine[inline].Equals("input_ops", StringComparison.CurrentCultureIgnoreCase))
             {
-                //TODO throw proper exception
-                throw new NotImplementedException();
+                throw new InvalidOperationException();
             }
 
             inline += 1;
@@ -113,8 +109,7 @@ namespace Dadstorm
         {
             if (!splitedLine[inline].Equals("rep_fact", StringComparison.CurrentCultureIgnoreCase))
             {
-                //TODO throw proper exception
-                throw new NotImplementedException();
+                throw new InvalidOperationException();
             }
             inline += 1;
             configInfo.RepFactor = Int32.Parse(splitedLine[inline]);
@@ -125,8 +120,7 @@ namespace Dadstorm
         {
             if (!splitedLine[inline].Equals("routing", StringComparison.CurrentCultureIgnoreCase))
             {
-                //TODO throw proper exception
-                throw new NotImplementedException();
+                throw new InvalidOperationException();
             }
             inline += 1;
             configInfo.Routing = splitedLine[inline];
@@ -137,8 +131,7 @@ namespace Dadstorm
         {
             if (!splitedLine[inline].Equals("address", StringComparison.CurrentCultureIgnoreCase))
             {
-                //TODO throw proper exception
-                throw new NotImplementedException();
+                throw new InvalidOperationException();
             }
             inline += 1;
             while (!splitedLine[inline + 1].Equals("operator_spec", StringComparison.CurrentCultureIgnoreCase))
@@ -154,8 +147,7 @@ namespace Dadstorm
         {
             if (!splitedLine[inline].Equals("operator_spec", StringComparison.CurrentCultureIgnoreCase))
             {
-                //TODO throw proper exception
-                throw new NotImplementedException();
+                throw new InvalidOperationException();
             }
             inline += 1;
             configInfo.Operation = splitedLine[inline];
