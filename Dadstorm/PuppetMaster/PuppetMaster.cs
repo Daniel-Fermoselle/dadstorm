@@ -31,7 +31,7 @@ namespace Dadstorm
         public PuppetMaster(Form form, Delegate printToForm)
         {
             //Set atributes
-            this.repServices = new Dictionary<string, ArrayList>();
+            repServices = new Dictionary<string, ArrayList>();
             nextCommand = 0;
             loggingLvl = DEFAULT_LOGGING;
             
@@ -67,7 +67,7 @@ namespace Dadstorm
                 foreach(string url in urls)
                 {
                     //For each url contact the PCS in the ip of that url and tell him to create a replica
-                    String urlOnly = getIPFromUrl(url);
+                    string urlOnly = getIPFromUrl(url);
                     PCSServices pcs = getPCSServices("tcp://" + urlOnly + ":" +
                                                       PCS_PORT + "/" + PCSSERVER_NAME);
                     RepInfo info = new RepInfo(c.Routing, c.Operation, 
@@ -221,9 +221,9 @@ namespace Dadstorm
         public void ProcessSingleCommand()
         {
             //TODO add if's to avoid wrong commands
-            if(commands == null)
+            if(commands == null || nextCommand >= commands.Count)
             {
-                //TODO throw exception no commands in config
+                SendToLog("No commands to run");
             }
             String command = (string) commands[nextCommand];
             nextCommand++;
@@ -258,7 +258,7 @@ namespace Dadstorm
             }
             else
             {
-                //TODO throw exception command does not exist
+                throw new InvalidCommandException(splitedCommand[0]);
             }
         }
 

@@ -43,4 +43,28 @@ namespace Dadstorm
         }
     }
 
+    //PM exceptions
+
+    public class InvalidCommandException : ApplicationException
+    {
+        private string command;
+        public InvalidCommandException(string command)
+        {
+            this.command = command;
+        }
+
+        public InvalidCommandException(System.Runtime.Serialization.SerializationInfo info,
+            System.Runtime.Serialization.StreamingContext context)
+            : base(info, context)
+        {
+            info.GetString("command");
+        }
+
+        public override void GetObjectData(System.Runtime.Serialization.SerializationInfo info,
+                                           System.Runtime.Serialization.StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue("command", command);
+        }
+    }
 }
