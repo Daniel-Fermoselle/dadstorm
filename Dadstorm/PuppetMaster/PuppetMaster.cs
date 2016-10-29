@@ -9,20 +9,28 @@ namespace Dadstorm
 {
     public class PuppetMaster
     {
-        private const int PORT = 1000;
+        private const int PCS_PORT = 10000;
+        private const int PM_PORT  = 10001;
 
         private Form form;
         private Delegate printToForm;
         private Dictionary<string, ConfigInfo> config;
+        private Dictionary<string, ArrayList>  repServices;
 
         public PuppetMaster(Form form, Delegate printToForm)
         {
+            //Set atributes
+            this.repServices = new Dictionary<string, ArrayList>();
+            //Set atributes to print to form
             this.form = form;
             this.printToForm = printToForm;
             
             //Creating Channel
-            TcpChannel channel = new TcpChannel(PORT);
+            TcpChannel channel = new TcpChannel(PM_PORT);
             ChannelServices.RegisterChannel(channel, false);
+
+            //Publish PM Servicies
+            //TODO
         }
 
         public void StartProcessesPhase ()
@@ -45,10 +53,17 @@ namespace Dadstorm
                 {
                     //For each url contact the PCS in the ip of that url and tell his to creat a replica
                     String urlOnly = getIPFromUrl(url);
-                    PCSServices pcs = getPCSServices("tcp://" + urlOnly + ":10001/PCSServer");
-                    RepInfo info = new RepInfo(c.Routing, c.Operation, c.OperationParam, getUrlsToSend(), getPortFromUrl(url));
-                    //Set info to send
-                   // pcs.createOperator(info);
+                    PCSServices pcs = getPCSServices("tcp://" + urlOnly + ":" + PCS_PORT + "/PCSServer");
+                    RepInfo info = new RepInfo(c.Routing, c.Operation, 
+                                               c.OperationParam, getUrlsToSend(), 
+                                               getPortFromUrl(url));
+                    //Create replica
+                    pcs.createOperator(info);
+
+                    //Save replica services
+                    ArrayList array;
+                    repServices.TryGetValue(opx, out array);
+                    array.Add(getRepServices(url));
                 }
             }
         }
@@ -67,37 +82,77 @@ namespace Dadstorm
 
         public void Start(string operator_id)
         {
-            //TODO: implement
+            ArrayList array;
+            repServices.TryGetValue(operator_id, out array);
+            for (int i = 0; i < array.Count; i++)
+            {
+                RepServices repS = (RepServices) array[i];
+                //TODO make this call Asynchronous
+                repS.Start();
+                //TODO send action to Log
+            }
         }
 
         public void Interval(string operator_id, string x_ms)
         {
-            //TODO: implement
+            ArrayList array;
+            repServices.TryGetValue(operator_id, out array);
+            for (int i = 0; i < array.Count; i++)
+            {
+                RepServices repS = (RepServices)array[i];
+                //TODO make this call Asynchronous
+                repS.Interval(x_ms);
+                //TODO send action to Log
+            }
         }
 
         public void Status()
         {
-            //TODO: implement
+            foreach (string operator_id in repServices.Keys)
+            {
+                ArrayList array;
+                repServices.TryGetValue(operator_id, out array);
+                for (int i = 0; i < array.Count; i++)
+                {
+                    RepServices repS = (RepServices)array[i];
+                    //TODO make this call Asynchronous and report info in the project paper
+                    repS.Status();
+                    //TODO send action to Log
+                }
+            }
         }
 
         public void Crash(string processname)
         {
-            //TODO: implement
+            //TODO make this call Asynchronous
+            getRepServices(processname).Crash();
+            //TODO send action to log
         }
 
         public void Freeze(string processname)
         {
-            //TODO: implement
+            //TODO make this call Asynchronous
+            getRepServices(processname).Freeze();
+            //TODO send action to log        
         }
 
         public void Unfreeze(string processname)
         {
-            //TODO: implement
+            //TODO make this call Asynchronous
+            getRepServices(processname).Unfreeze();
+            //TODO send action to log
         }
 
         public void Wait(string x_ms)
         {
-            //TODO: implement
+            //TODO send action to log
+            System.Threading.Thread.Sleep(Int32.Parse(x_ms));
+        }
+
+
+        public void ProcessComands()
+        {
+            //TODO: implement all in a row or step by step
         }
 
         public PCSServices getPCSServices(string url)
