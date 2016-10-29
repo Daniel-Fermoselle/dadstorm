@@ -21,7 +21,7 @@ namespace Dadstorm
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            puppetMaster.StartProcessesPhase();
+            puppetMaster.StartProcessesPhase("Pog");
 
         }
 

@@ -1,16 +1,20 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Windows.Forms;
 
 namespace Dadstorm
 {
-    public class PuppetMaster
+    public class PuppetMaster 
     {
         private const int PCS_PORT = 10000;
         private const int PM_PORT  = 10001;
+        private const string PMSERVICE_NAME = "PMServices";
+        private const string PCSSERVER_NAME = "PCSServer";
+        private const string DEFAULT_LOGGING = "light";
 
         private Form form;
         private Delegate printToForm;
@@ -18,28 +22,33 @@ namespace Dadstorm
         private Dictionary<string, ArrayList>  repServices;
         private ArrayList commands;
         private int nextCommand;
+        private PuppetMasterServices PMService;
+        private string loggingLvl;
 
         public PuppetMaster(Form form, Delegate printToForm)
         {
             //Set atributes
             this.repServices = new Dictionary<string, ArrayList>();
+            nextCommand = 0;
+            loggingLvl = DEFAULT_LOGGING;
+            
             //Set atributes to print to form
             this.form = form;
             this.printToForm = printToForm;
             
-            //Creating Channel
+            //Creating Channel and publishing PM services
             TcpChannel channel = new TcpChannel(PM_PORT);
             ChannelServices.RegisterChannel(channel, false);
-
-            //Publish PM Servicies
-            //TODO
+            PMService = new PuppetMasterServices(form, printToForm);
+            RemotingServices.Marshal(PMService, PMSERVICE_NAME,typeof(PMServices));
+            
         }
 
-        public void StartProcessesPhase ()
+        public void StartProcessesPhase (string filePath)
         {
             //Start processes phase
             Parser p = new Parser();
-            p.readFile(@"C:\Users\sigma\Dropbox\repos\dadstorm\Exemplos\dadstorm.config"); //TODO tornar dinamico
+            p.readFile(@filePath);
             config = p.processFile();
             commands = p.Commands;
             StartProcesses();
@@ -54,33 +63,22 @@ namespace Dadstorm
                 ArrayList urls = c.Urls;
                 foreach(string url in urls)
                 {
-                    //For each url contact the PCS in the ip of that url and tell his to creat a replica
+                    //For each url contact the PCS in the ip of that url and tell him to create a replica
                     String urlOnly = getIPFromUrl(url);
-                    PCSServices pcs = getPCSServices("tcp://" + urlOnly + ":" + PCS_PORT + "/PCSServer");
+                    PCSServices pcs = getPCSServices("tcp://" + urlOnly + ":" +
+                                                      PCS_PORT + "/" + PCSSERVER_NAME);
                     RepInfo info = new RepInfo(c.Routing, c.Operation, 
                                                c.OperationParam, getUrlsToSend(), 
-                                               getPortFromUrl(url));
+                                               getPortFromUrl(url), loggingLvl); //TODO send url for service?
                     //Create replica
                     pcs.createOperator(info);
 
-                    //Save replica services
+                    //Save replica service
                     ArrayList array;
                     repServices.TryGetValue(opx, out array);
                     array.Add(getRepServices(url));
                 }
             }
-        }
-
-        private string getIPFromUrl(string url)
-        {
-            string[] splitedUrl = url.Split('/');
-            return splitedUrl[2].Split(':')[0];
-        }
-
-        private string getPortFromUrl(string url)
-        {
-            string[] splitedUrl = url.Split('/');
-            return splitedUrl[2].Split(':')[1];
         }
 
         public void Start(string operator_id)
@@ -92,7 +90,7 @@ namespace Dadstorm
                 RepServices repS = (RepServices) array[i];
                 //TODO make this call Asynchronous
                 repS.Start();
-                //TODO send action to Log
+                SendToLog("Start " + operator_id);
             }
         }
 
@@ -105,7 +103,7 @@ namespace Dadstorm
                 RepServices repS = (RepServices)array[i];
                 //TODO make this call Asynchronous
                 repS.Interval(x_ms);
-                //TODO send action to Log
+                SendToLog("Interval " + operator_id + " " + x_ms);
             }
         }
 
@@ -120,7 +118,7 @@ namespace Dadstorm
                     RepServices repS = (RepServices)array[i];
                     //TODO make this call Asynchronous and report info in the project paper
                     repS.Status();
-                    //TODO send action to Log
+                    SendToLog("Status");
                 }
             }
         }
@@ -129,34 +127,35 @@ namespace Dadstorm
         {
             //TODO make this call Asynchronous
             getRepServices(processname).Crash();
-            //TODO send action to log
+            SendToLog("Crash " + processname);
         }
 
         public void Freeze(string processname)
         {
             //TODO make this call Asynchronous
             getRepServices(processname).Freeze();
-            //TODO send action to log        
+            SendToLog("Freeze " + processname);
         }
 
         public void Unfreeze(string processname)
         {
             //TODO make this call Asynchronous
             getRepServices(processname).Unfreeze();
-            //TODO send action to log
+            SendToLog("Unfreeze " + processname);
         }
 
         public void Wait(string x_ms)
         {
-            //TODO send action to log
+            SendToLog("Wait " + x_ms);
             System.Threading.Thread.Sleep(Int32.Parse(x_ms));
         }
 
-
         public void ProcessComands()
         {
-            //TODO: implement all in a row or step by step
-
+            while(nextCommand < commands.Count)
+            {
+                ProcessSingleCommand();
+            }
         }
 
         public void ProcessSingleCommand()
@@ -203,7 +202,6 @@ namespace Dadstorm
             }
         }
 
-
         public PCSServices getPCSServices(string url)
         {
             //Getting the PCSServices object 
@@ -216,6 +214,18 @@ namespace Dadstorm
             //Getting the RepServices object 
             RepServices obj = (RepServices)Activator.GetObject(typeof(RepServices), url);
             return obj;
+        }
+
+        private string getIPFromUrl(string url)
+        {
+            string[] splitedUrl = url.Split('/');
+            return splitedUrl[2].Split(':')[0];
+        }
+
+        private string getPortFromUrl(string url)
+        {
+            string[] splitedUrl = url.Split('/');
+            return splitedUrl[2].Split(':')[1];
         }
 
         public Dictionary<string, Dictionary<string, ArrayList>> getUrlsToSend()
@@ -244,6 +254,11 @@ namespace Dadstorm
                 toReturn.Add(OPX, subDic);
             }
             return toReturn;
+        }
+
+        public void SendToLog(string msg)
+        {
+            form.Invoke(printToForm, new object[] { msg });
         }
     }
 }

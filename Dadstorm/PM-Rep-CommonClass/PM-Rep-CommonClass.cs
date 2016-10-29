@@ -41,4 +41,9 @@ namespace Dadstorm
             throw new NotImplementedException();
         }
     }
+
+    public interface PMServices
+    {
+        void SendToLog(string msg);
+    }
 }

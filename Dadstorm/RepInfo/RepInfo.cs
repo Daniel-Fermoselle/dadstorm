@@ -10,6 +10,7 @@ namespace Dadstorm
         private ArrayList operator_param;
         private Dictionary<string, Dictionary<string, ArrayList>> sendInfoUrls;
         private string port;
+        private string loggingLvl;
 
         public RepInfo()
         {
@@ -18,13 +19,14 @@ namespace Dadstorm
 
         public RepInfo(string routing, string operator_spec, ArrayList operator_param, 
                        Dictionary<string, Dictionary<string, ArrayList>> sendInfoUrls,
-                       string port)
+                       string port, string loggingLvl)
         {
             this.routing = routing;
             this.operator_spec = operator_spec;
             this.operator_param = operator_param;
             this.sendInfoUrls = sendInfoUrls;
             this.port = port;
+            this.loggingLvl = loggingLvl;
         }
 
         public string Routing
@@ -52,6 +54,12 @@ namespace Dadstorm
         {
             set { port = value; }
             get { return port; }
+        }
+
+        public string LoggingLvl
+        {
+            set { loggingLvl = value; }
+            get { return loggingLvl; }
         }
 
         public void AddOperator_param(string toAdd)
