@@ -105,6 +105,7 @@ namespace Dadstorm
                 
                 SendToLog("Start " + operator_id);
             }
+            //lancar excepcao ou aviso de que o id nao existe
         }
 
         public void Interval(string operator_id, string x_ms)
