@@ -22,7 +22,6 @@ namespace Dadstorm
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            //puppetMaster.StartProcessesPhase("Pog");
 
         }
 
@@ -75,7 +74,7 @@ namespace Dadstorm
             }
             else
             {
-                //Exception
+                //TODO: Exception PERGUNTAR
             }
         }
 
@@ -125,10 +124,6 @@ namespace Dadstorm
 
         }
 
-        private void textBox4_TextChanged(object sender, EventArgs e)
-        {
-
-        }
 
         private void textBox3_TextChanged(object sender, EventArgs e)
         {
@@ -136,6 +131,11 @@ namespace Dadstorm
         }
 
         private void textBox6_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox8_TextChanged(object sender, EventArgs e)
         {
 
         }
