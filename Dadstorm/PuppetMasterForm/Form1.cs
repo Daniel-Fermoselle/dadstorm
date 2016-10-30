@@ -68,8 +68,7 @@ namespace Dadstorm
         private void button2_Click(object sender, EventArgs e)
         {
             String s = textBox5.Text;
-            String[] stringSeparators = new string[] { " " };
-            String[] toDivide = s.Split(stringSeparators, StringSplitOptions.None);
+            String[] toDivide = s.Split(' ');
             if (toDivide.Length == 2)
             {
                 puppetMaster.Interval(toDivide[0], toDivide[1]);
