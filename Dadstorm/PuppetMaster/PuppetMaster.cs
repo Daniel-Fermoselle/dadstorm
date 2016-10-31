@@ -158,10 +158,10 @@ namespace Dadstorm
         }
 
         public void Crash(string processname)
-        {
+        {   
             //Asynchronous call without callback
             // Create delegate to remote method
-            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getRepServices(processname).Crash);
+            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(processname).Crash);
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
@@ -177,7 +177,7 @@ namespace Dadstorm
         {
             //Asynchronous call without callback
             // Create delegate to remote method
-            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getRepServices(processname).Freeze);
+            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(processname).Freeze);
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
@@ -193,7 +193,7 @@ namespace Dadstorm
         {
             //Asynchronous call without callback
             // Create delegate to remote method
-            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getRepServices(processname).Unfreeze);
+            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(processname).Unfreeze);
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
@@ -229,37 +229,50 @@ namespace Dadstorm
             String command = (string) commands[nextCommand];
             nextCommand++;
             string[] splitedCommand = command.Split(' ');
-            if (splitedCommand[0].StartsWith("Star"))
+            if (splitedCommand[0].StartsWith("Start"))
             {
                 Start(splitedCommand[1]);
             }
-            else if(splitedCommand[0].StartsWith("I"))
+            else if(splitedCommand[0].StartsWith("Interval"))
             {
                 Interval(splitedCommand[1], splitedCommand[2]);
             }
-            else if (splitedCommand[0].StartsWith("Stat"))
+            else if (splitedCommand[0].StartsWith("Status"))
             {
                 Status();
             }
-            else if (splitedCommand[0].StartsWith("C"))
+            else if (splitedCommand[0].StartsWith("Crash"))
             {
                 Crash(splitedCommand[1]);
             }
-            else if (splitedCommand[0].StartsWith("F"))
+            else if (splitedCommand[0].StartsWith("Freeze"))
             {
                 Freeze(splitedCommand[1]);
             }
-            else if (splitedCommand[0].StartsWith("U"))
+            else if (splitedCommand[0].StartsWith("Unfreeze"))
             {
                 Unfreeze(splitedCommand[1]);
             }
-            else if (splitedCommand[0].StartsWith("W"))
+            else if (splitedCommand[0].StartsWith("Wait"))
             {
                 Wait(splitedCommand[1]);
             }
             else
             {
                 throw new InvalidCommandException(splitedCommand[0]);
+            }
+        }
+
+        public void shutdownRep()
+        {
+            foreach(string opx in repServices.Keys)
+            {
+                ArrayList replicas;
+                repServices.TryGetValue(opx, out replicas);
+                for (int i = 0; i < replicas.Count; i++)
+                {
+                    ((RepServices)replicas[i]).ShutDown();
+                }
             }
         }
 
@@ -315,6 +328,15 @@ namespace Dadstorm
                 toReturn.Add(OPX, subDic);
             }
             return toReturn;
+        }
+
+        private RepServices getReplicaServiceFromProcessname(string processname)
+        {
+            string[] processnameSplited = processname.Split(' ');
+            ArrayList replicasServices;
+            repServices.TryGetValue(processnameSplited[0], out replicasServices);
+            int i = Int32.Parse(processnameSplited[1]);
+            return (RepServices) replicasServices[i];
         }
 
         public void SendToLog(string msg)

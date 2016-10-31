@@ -40,6 +40,11 @@ namespace Dadstorm
         {
             throw new NotImplementedException();
         }
+
+        public void ShutDown()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public interface PMServices

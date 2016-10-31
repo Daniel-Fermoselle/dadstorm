@@ -11,6 +11,7 @@ namespace Dadstorm
         private int line;
         private string loggingLvl;
         private ArrayList commands;
+        private string semantics;
 
         public void readFile(string path)
         {
@@ -47,12 +48,13 @@ namespace Dadstorm
                 else if (currentLine.StartsWith("LoggingLevel", StringComparison.Ordinal))
                 {
                     string[] splitedLine = currentLine.Split(' ');
-                    LoggingLvl = splitedLine[1];
+                    loggingLvl = splitedLine[1];
                     continue;
                 }
                 else if (currentLine.StartsWith("Semantics", StringComparison.Ordinal))
                 {
-                    //TODO implement 
+                    string[] splitedLine = currentLine.Split(' ');
+                    semantics = splitedLine[1];
                     continue;
                 }
                 else if (currentLine.StartsWith("Start", StringComparison.Ordinal)  || currentLine.StartsWith("Interval", StringComparison.Ordinal) ||
@@ -166,6 +168,12 @@ namespace Dadstorm
         {
             get { return loggingLvl;  }
             set { loggingLvl = value; }
+        }
+
+        public string Semantics
+        {
+            get { return semantics; }
+            set { semantics = value; }
         }
 
         public ArrayList Commands
