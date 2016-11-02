@@ -74,7 +74,7 @@ namespace Dadstorm
                                                c.OperationParam, getUrlsToSend(), 
                                                getPortFromUrl(url), loggingLvl); //TODO send url for service?
                     //Create replica
-                    pcs.createOperator(info);
+                    pcs.createOperator(info.Port);
 
                     //Save replica service
                     ArrayList array;
