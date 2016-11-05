@@ -63,4 +63,23 @@ namespace Dadstorm
             this.repInfo = info;
         }
     }
+
+    class Tuple
+    {
+        private List<string> elements;
+
+        public Tuple(List<string> tuple)
+        {
+            this.elements = tuple;
+        }
+        override public string ToString()
+        {
+            string result = "";
+            foreach (string s in elements)
+            {
+                result = result + "," + s;
+            }
+            return result.Remove(0, 1);
+        }
+    }
 }
