@@ -10,10 +10,10 @@ using System.Runtime.Remoting.Channels.Tcp;
 namespace Dadstorm
 {
 
-    public class RepServer
+    public class OperatorServer
     {
-
-        private const string REPSERVICE_NAME = "RepServices";
+        //Different names?
+        private const string OPSERVICE_NAME = "OperatorServices";
 
         static void Main(string[] args)
         {
@@ -24,12 +24,32 @@ namespace Dadstorm
             ChannelServices.RegisterChannel(serverChannel, false);
 
             // Expose an object form RepServices for remote calls.
-            RepServices repServices = new RepServices();
+            OperatorServices opServices = new OperatorServices();
             //TODO Call RepServices method to populate class 
-            RemotingServices.Marshal(repServices, REPSERVICE_NAME, typeof(RepServices));
+            RemotingServices.Marshal(opServices, OPSERVICE_NAME, typeof(OperatorServices));
 
-            System.Console.WriteLine("<enter> para sair...");
+            System.Console.WriteLine("Press <enter> to terminate server...");
             System.Console.ReadLine();
         }
+    }
+
+    internal class OperatorServices : MarshalByRefObject, RepServices
+    {
+
+        public OperatorServices() { }
+
+        public void Start() { }
+
+        public void Interval(string x_ms) { }
+
+        public void Status() { }
+
+        public void Crash() { }
+
+        public void Freeze() { }
+
+        public void Unfreeze() { }
+
+        public void ShutDown() { }
     }
 }

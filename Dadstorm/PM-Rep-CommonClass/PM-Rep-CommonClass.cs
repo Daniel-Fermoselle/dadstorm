@@ -4,47 +4,21 @@ using System;
 
 namespace Dadstorm
 {
-    public class RepServices : MarshalByRefObject
+    public interface RepServices
     {
-        public RepServices()
-        {
+        void Start();
 
-        }
+        void Interval(string x_ms);
 
-        public void Start()
-        {
-            throw new NotImplementedException();
-        }
+        void Status();
 
-        public void Interval(string x_ms)
-        {
-            throw new NotImplementedException();
-        }
+        void Crash();
 
-        public void Status()
-        {
-            throw new NotImplementedException();
-        }
+        void Freeze();
 
-        public void Crash()
-        {
-            throw new NotImplementedException();
-        }
+        void Unfreeze();
 
-        public void Freeze()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Unfreeze()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ShutDown()
-        {
-            throw new NotImplementedException();
-        }
+        void ShutDown();
     }
 
     public interface PMServices
