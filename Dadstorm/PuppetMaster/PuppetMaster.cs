@@ -70,9 +70,10 @@ namespace Dadstorm
                     string urlOnly = getIPFromUrl(url);
                     PCSServices pcs = getPCSServices("tcp://" + urlOnly + ":" +
                                                       PCS_PORT + "/" + PCSSERVER_NAME);
-                    RepInfo info = new RepInfo(c.Routing, c.Operation, 
+                    RepInfo info = new RepInfo(c.SourceInput ,c.Routing, c.Operation, 
                                                c.OperationParam, getUrlsToSend(), 
-                                               getPortFromUrl(url), loggingLvl); //TODO send url for service?
+                                               getPortFromUrl(url), loggingLvl, "TODO"); //TODO send url for service
+
                     //Create replica
                     pcs.createOperator(info.Port);
 
