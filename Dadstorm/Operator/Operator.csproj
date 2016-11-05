@@ -82,6 +82,10 @@
       <Project>{205f36e9-4d82-44c9-860d-e692d67967a9}</Project>
       <Name>PM-Rep-CommonClass</Name>
     </ProjectReference>
+    <ProjectReference Include="..\RepInfo\RepInfo.csproj">
+      <Project>{a4f4ef39-12fa-4825-a18c-3b77430364a0}</Project>
+      <Name>RepInfo</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
