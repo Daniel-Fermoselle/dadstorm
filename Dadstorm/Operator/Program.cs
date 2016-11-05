@@ -25,7 +25,6 @@ namespace Dadstorm
 
             // Expose an object form RepServices for remote calls.
             OperatorServices opServices = new OperatorServices();
-            //TODO Call RepServices method to populate class 
             RemotingServices.Marshal(opServices, OPSERVICE_NAME, typeof(OperatorServices));
 
             System.Console.WriteLine("Press <enter> to terminate server...");
@@ -35,8 +34,15 @@ namespace Dadstorm
 
     internal class OperatorServices : MarshalByRefObject, RepServices
     {
+        private RepInfo repInfo;
 
         public OperatorServices() { }
+
+        public RepInfo RepInfo
+        {
+            get { return repInfo; }
+            set { repInfo = value; }
+        }
 
         public void Start() { }
 
@@ -51,5 +57,10 @@ namespace Dadstorm
         public void Unfreeze() { }
 
         public void ShutDown() { }
+
+        public void Populate(RepInfo info)
+        {
+            this.repInfo = info;
+        }
     }
 }
