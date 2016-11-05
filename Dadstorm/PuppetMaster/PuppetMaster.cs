@@ -79,7 +79,7 @@ namespace Dadstorm
 
                     //Create replica
                     pcs.createOperator(info.Port);
-                    //TODO rs.populate(info); //Initializating operator
+                    //TODO rs.Populate(info); //Initializating operator
 
                     //Save replica service
                     ArrayList array;
