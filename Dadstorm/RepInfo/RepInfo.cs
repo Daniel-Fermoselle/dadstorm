@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Dadstorm
 {
+    [Serializable]
     public class RepInfo
     {
         private string routing;
