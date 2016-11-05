@@ -73,13 +73,18 @@ namespace Dadstorm
                     RepInfo info = new RepInfo(c.Routing, c.Operation, 
                                                c.OperationParam, getUrlsToSend(), 
                                                getPortFromUrl(url), loggingLvl); //TODO send url for service?
+
+                    //Connection with the operator
+                    RepServices rs = getRepServices(url);
+
                     //Create replica
                     pcs.createOperator(info.Port);
+                    //TODO rs.populate(info); //Initializating operator
 
                     //Save replica service
                     ArrayList array;
                     repServices.TryGetValue(opx, out array);
-                    array.Add(getRepServices(url));
+                    array.Add(rs); //rs=getRepServices(url)
                 }
             }
         }
