@@ -75,6 +75,10 @@ namespace Dadstorm
                     Thread.Sleep(operatorService.RepInterval);
                     operatorService.RepInterval = 0;
                 }
+                if (operatorService.RepCrash)
+                {
+                    pool[0].Abort();
+                }
 
                 
             }
@@ -91,6 +95,11 @@ namespace Dadstorm
                 Tuple t = bufferRead.Consume();
 
                 //TODO Send tuple to the next Operator
+
+                if (operatorService.RepCrash)
+                {
+                    pool[0].Abort();
+                }
 
             }
         }

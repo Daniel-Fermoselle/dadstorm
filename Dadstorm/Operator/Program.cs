@@ -71,6 +71,11 @@ namespace Dadstorm
         private int repInterval = 0;
 
         /// <summary>
+        /// Bool that signs when the process will crash.
+        /// </summary>
+        private bool repCrash = false;
+
+        /// <summary>
         /// OperatorServices constructor.
         /// </summary>
         public OperatorServices()
@@ -97,11 +102,29 @@ namespace Dadstorm
         }
 
         /// <summary>
+        /// RepStatus setter and getter.
+        /// </summary>
+        public string RepStatus
+        {
+            get { return repStatus; }
+
+            set { repStatus = value; }
+        }
+
+        public bool RepCrash
+        {
+            get { return repCrash; }
+
+            set { repCrash = value; }
+        }
+
+        /// <summary>
         /// Response to a Start command.
         /// Sending read tuples from files to the buffer.
         /// </summary>
         public void Start()
         {
+            this.repStatus = "Starting";
             List<Tuple> tupleList = new List<Tuple>();
 
             //TODO Here comes the parser 
@@ -119,6 +142,7 @@ namespace Dadstorm
         /// <param name="x_ms">Operator will stop for x_ms miliseconds.</param>
         public void Interval(string x_ms)
         {
+            this.repStatus = "on Interval";
             int interval = Int32.Parse(x_ms);
             this.repInterval = interval;
         }
@@ -126,22 +150,34 @@ namespace Dadstorm
         /// <summary>
         /// Response to a Status command.
         /// </summary>
-        public void Status() { }
+        public void Status()
+        {
+            Console.Write("This replica is " + this.repStatus + "...");
+        }
 
         /// <summary>
         /// Response to a Crash command.
         /// </summary>
-        public void Crash() { }
+        public void Crash()
+        {
+            this.repCrash = true;
+        }
 
         /// <summary>
         /// Response to a Freeze command.
         /// </summary>
-        public void Freeze() { }
+        public void Freeze()
+        {
+
+        }
 
         /// <summary>
         /// Response to a Unfreeze command.
         /// </summary>
-        public void Unfreeze() { }
+        public void Unfreeze()
+        {
+
+        }
 
         /// <summary>
         /// Response to a ShutDown command.
