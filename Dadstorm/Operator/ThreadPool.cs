@@ -38,17 +38,12 @@ namespace Dadstorm
             pool = new Thread[thrNum];
             this.operatorService = operatorService;
 
-            //Start and distribute threads
-            for (int i = 0; i < thrNum / 2; i++)
-            {
-                pool[i] = new Thread(new ThreadStart(ConsumeRead));
-                pool[i].Start();
-            }
-            for (int i = thrNum / 2; i < thrNum; i++)
-            {
-                pool[i] = new Thread(new ThreadStart(ConsumeProcessed));
-                pool[i].Start();
-            }
+            //Start threads
+            int i = 0;
+            pool[i] = new Thread(new ThreadStart(ConsumeRead));
+            pool[i++].Start();
+            pool[i] = new Thread(new ThreadStart(ConsumeProcessed));
+            pool[i].Start();
         }
 
         /// <summary>
@@ -74,6 +69,13 @@ namespace Dadstorm
                 Tuple t = bufferRead.Consume();
 
                 //TODO Check if tuple will go to bufferProcessed
+
+                if (operatorService.RepInterval != 0)
+                {
+                    Thread.Sleep(operatorService.RepInterval);
+                    operatorService.RepInterval = 0;
+                }
+
                 
             }
         }

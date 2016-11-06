@@ -44,7 +44,7 @@ namespace Dadstorm
         /// <summary>
         /// Number of threads to be created.
         /// </summary>
-        private const int THREAD_NUMBER = 4;
+        private const int THREAD_NUMBER = 2;
         /// <summary>
         /// Size of the circular buffers.
         /// </summary>
@@ -54,10 +54,21 @@ namespace Dadstorm
         /// Information concerning the Replica.
         /// </summary>
         private RepInfo repInfo;
+
         /// <summary>
         /// Thread pool.
         /// </summary>
         private ThrPool threadPool;
+
+        /// <summary>
+        /// String with the current status of the replica.
+        /// </summary>
+        private string repStatus = "Unitialized";
+
+        /// <summary>
+        /// String with the current status of the replica.
+        /// </summary>
+        private int repInterval = 0;
 
         /// <summary>
         /// OperatorServices constructor.
@@ -77,42 +88,68 @@ namespace Dadstorm
         }
 
         /// <summary>
-        /// Pupper Master Start command.
+        /// RepInterval setter and getter.
         /// </summary>
-        public void Start() { }
+        public int RepInterval
+        {
+            get { return repInterval; }
+            set { repInterval = value; }
+        }
 
         /// <summary>
-        /// Pupper Master Interval command.
+        /// Response to a Start command.
+        /// Sending read tuples from files to the buffer.
         /// </summary>
-        public void Interval(string x_ms) { }
+        public void Start()
+        {
+            List<Tuple> tupleList = new List<Tuple>();
+
+            //TODO Here comes the parser 
+
+            foreach(Tuple t in tupleList)
+            {
+                threadPool.AssyncInvoke(t);
+            }
+        }
 
         /// <summary>
-        /// Pupper Master Status command.
+        /// Response to a Interval command.
+        /// Operator stops for a certain amount of time.
+        /// </summary>
+        /// <param name="x_ms">Operator will stop for x_ms miliseconds.</param>
+        public void Interval(string x_ms)
+        {
+            int interval = Int32.Parse(x_ms);
+            this.repInterval = interval;
+        }
+
+        /// <summary>
+        /// Response to a Status command.
         /// </summary>
         public void Status() { }
 
         /// <summary>
-        /// Pupper Master Crash command.
+        /// Response to a Crash command.
         /// </summary>
         public void Crash() { }
 
         /// <summary>
-        /// Pupper Master Freeze command.
+        /// Response to a Freeze command.
         /// </summary>
         public void Freeze() { }
 
         /// <summary>
-        /// Pupper Master Unfreeze command.
+        /// Response to a Unfreeze command.
         /// </summary>
         public void Unfreeze() { }
 
         /// <summary>
-        /// Pupper Master ShutDown command.
+        /// Response to a ShutDown command.
         /// </summary>
         public void ShutDown() { }
 
         /// <summary>
-        /// Pupper Master Populate command.
+        /// Response to a Populate command.
         /// </summary>
         public void Populate(RepInfo info)
         {
