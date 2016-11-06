@@ -7,34 +7,92 @@ namespace Dadstorm
 
     class ThrPool
     {
-        private CircularBuffer<Tuple> buf;
+        /// <summary>
+        /// CircularBuffer with read tuples.
+        /// </summary>
+        private CircularBuffer<Tuple> bufferRead;
+        /// <summary>
+        /// CircularBuffer with processed tuples.
+        /// </summary>
+        private CircularBuffer<Tuple> bufferProcessed;
+        /// <summary>
+        /// Thread pool.
+        /// </summary>
         private Thread[] pool;
-        public ThrPool(int thrNum, int bufSize)
-        {
-            buf = new CircularBuffer<Tuple>(bufSize);
+        /// <summary>
+        /// Operator that owns the Thread Pool.
+        /// </summary>
+        private OperatorServices operatorService;
+
+        /// <summary>
+        /// CircularBuffer constructor.
+        /// </summary>
+        /// <param name="thrNum">Number of threads to be created.</param>
+        /// <param name="size">Size of the circular buffers.</param>
+        /// <param name="operatorService">Operator that owns the Thread Pool.</param>
+        public ThrPool(int thrNum, int bufSize, OperatorServices operatorService)
+        {       
+            //Initialize attributes    
+            bufferRead = new CircularBuffer<Tuple>(bufSize);
+            bufferProcessed = new CircularBuffer<Tuple>(bufSize);
             pool = new Thread[thrNum];
-            for (int i = 0; i < thrNum; i++)
+            this.operatorService = operatorService;
+
+            //Start and distribute threads
+            for (int i = 0; i < thrNum / 2; i++)
             {
-                pool[i] = new Thread(new ThreadStart(consomeExec));
+                pool[i] = new Thread(new ThreadStart(ConsumeRead));
+                pool[i].Start();
+            }
+            for (int i = thrNum / 2; i < thrNum; i++)
+            {
+                pool[i] = new Thread(new ThreadStart(ConsumeProcessed));
                 pool[i].Start();
             }
         }
 
+        /// <summary>
+        /// AssyncInvoke inserts tuple in bufferRead.
+        /// </summary>
+        /// <param name="tuple">Tuple that will be added</param>
         public void AssyncInvoke(Tuple tuple)
         {
-            buf.Produce(tuple);
+            //Add tuple to bufferRead
+            bufferRead.Produce(tuple);
 
             Console.WriteLine("Submitted tuple " + tuple.ToString());
         }
 
-        public void consomeExec()
+        /// <summary>
+        /// ConsumeRead gets tuple from bufferRead and processes it.
+        /// </summary>
+        public void ConsumeRead()
         {
             while (true)
             {
-                Tuple t = buf.Consume();
-                Console.WriteLine(t.ToString());
+                //Get tuple from bufferRead
+                Tuple t = bufferRead.Consume();
+
+                //TODO Check if tuple will go to bufferProcessed
+                
             }
         }
+
+        /// <summary>
+        /// ConsumeRead gets tuple from bufferProcessed and sends it to the next operator.
+        /// </summary>
+        public void ConsumeProcessed()
+        {
+            while (true)
+            {
+                //Gets tuple from bufferProcessed
+                Tuple t = bufferRead.Consume();
+
+                //TODO Send tuple to the next Operator
+
+            }
+        }
+
     }
 
     /*
