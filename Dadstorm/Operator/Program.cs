@@ -181,6 +181,7 @@ namespace Dadstorm
         public void Crash()
         {
             this.repCrash = true;
+            Environment.Exit(0);
         }
 
         /// <summary>
@@ -188,7 +189,8 @@ namespace Dadstorm
         /// </summary>
         public void Freeze()
         {
-
+            //TODO
+            repFreeze = true;
         }
 
         /// <summary>
@@ -196,7 +198,8 @@ namespace Dadstorm
         /// </summary>
         public void Unfreeze()
         {
-
+            //TODO
+            repFreeze = false;
         }
 
         /// <summary>
