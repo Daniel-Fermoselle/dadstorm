@@ -158,13 +158,19 @@ namespace Dadstorm
             this.repStatus = "starting";
             List<Tuple> tupleList = new List<Tuple>();
 
-            //TODO Here comes the parser 
-
-            foreach(Tuple t in tupleList)
+            foreach(string s in repInfo.Input)
             {
-                threadPool.AssyncInvoke(t);
+                if (s.Contains(".dat"))
+                {
+                    OpParser parser = new OpParser(s);
+                    tupleList = parser.processFile();
+                    foreach (Tuple t in tupleList)
+                    {
+                        threadPool.AssyncInvoke(t);
+                    }
+                    this.repStatus = "working";
+                }
             }
-            this.repStatus = "working";
         }
 
         /// <summary>

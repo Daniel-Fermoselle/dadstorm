@@ -61,6 +61,15 @@ namespace Dadstorm
         }
 
         /// <summary>
+        /// Pool setter and getter.
+        /// </summary>
+        public Thread[] Pool
+        {
+            get { return pool; }
+            set { pool = value; }
+        }
+
+        /// <summary>
         /// AssyncInvoke inserts tuple in bufferRead.
         /// </summary>
         /// <param name="t">Tuple that will be added</param>
@@ -105,6 +114,10 @@ namespace Dadstorm
                     Thread.Sleep(operatorService.RepInterval);
                     operatorService.RepInterval = 0;
                     operatorService.RepStatus = "working";
+                }
+                if (operatorService.RepFreeze)
+                {
+                    Thread.Sleep(100);
                 }
                 if (operatorService.RepCrash)
                 {
