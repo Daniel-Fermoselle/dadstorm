@@ -9,6 +9,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 
 namespace Dadstorm
 {
+    delegate bool processTuple(Tuple t);
 
     public class OperatorServer
     {
@@ -76,11 +77,17 @@ namespace Dadstorm
         private bool repCrash = false;
 
         /// <summary>
+        /// Dictionaru with methods to process tuples.
+        /// </summary>
+        private Dictionary<string, processTuple> processors;
+
+        /// <summary>
         /// OperatorServices constructor.
         /// </summary>
         public OperatorServices()
         {
             threadPool = new ThrPool(THREAD_NUMBER, BUFFER_SIZE, this);
+            processors = new Dictionary<string, processTuple>();
         }
 
         /// <summary>
@@ -133,6 +140,8 @@ namespace Dadstorm
             {
                 threadPool.AssyncInvoke(t);
             }
+
+            //TODO Add entries to the dictionary.
         }
 
         /// <summary>
@@ -191,6 +200,59 @@ namespace Dadstorm
         {
             this.repInfo = info;
         }
+
+        /// <summary>
+        /// Unique operator processing.
+        /// </summary>
+        public bool processTuple(Tuple t)
+        {
+            //TODO Do I have to initialize value?
+            processTuple value;
+            processors.TryGetValue(this.repInfo.Operator_spec, out value);
+            return value(t);
+        }
+
+        /// <summary>
+        /// Unique operator processing.
+        /// </summary>
+        public bool Unique(Tuple t)
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Count operator processing.
+        /// </summary>
+        public bool Count(Tuple t)
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Dup operator processing.
+        /// </summary>
+        public bool Dup(Tuple t)
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Filter operator processing.
+        /// </summary>
+        public bool Filter(Tuple t)
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Custom operator processing.
+        /// </summary>
+        public bool Custom(Tuple t)
+        {
+            return true;
+        }
+
+
     }
 
     /// <summary>
