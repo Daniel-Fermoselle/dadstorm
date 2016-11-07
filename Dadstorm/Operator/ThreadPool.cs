@@ -23,6 +23,10 @@ namespace Dadstorm
         /// Operator that owns the Thread Pool.
         /// </summary>
         private OperatorServices operatorService;
+        /// <summary>
+        /// List of tuples read.
+        /// </summary>
+        private List<Tuple> tuplesRead;
 
         /// <summary>
         /// CircularBuffer constructor.
@@ -37,6 +41,7 @@ namespace Dadstorm
             bufferProcessed = new CircularBuffer<Tuple>(bufSize);
             pool = new Thread[thrNum];
             this.operatorService = operatorService;
+            tuplesRead = new List<Tuple>();
 
             //Start threads
             int i = 0;
@@ -47,6 +52,15 @@ namespace Dadstorm
         }
 
         /// <summary>
+        /// TuplesRead setter and getter.
+        /// </summary>
+        internal List<Tuple> TuplesRead
+        {
+            get { return tuplesRead; }
+            set { tuplesRead = value; }
+        }
+
+        /// <summary>
         /// AssyncInvoke inserts tuple in bufferRead.
         /// </summary>
         /// <param name="tuple">Tuple that will be added</param>
@@ -54,8 +68,9 @@ namespace Dadstorm
         {
             //Add tuple to bufferRead
             bufferRead.Produce(tuple);
+            tuplesRead.Add(tuple);
 
-            Console.WriteLine("Submitted tuple " + tuple.ToString());
+            Console.WriteLine("Submitted tuple " + tuple.ToString() + "to buffer of Read Tuples");
         }
 
         /// <summary>
@@ -68,7 +83,10 @@ namespace Dadstorm
                 //Get tuple from bufferRead
                 Tuple t = bufferRead.Consume();
 
-                //TODO Check if tuple will go to bufferProcessed
+                if (operatorService.processTuple(t))
+                {
+                    bufferProcessed.Produce(t);
+                }
 
                 if (operatorService.RepInterval != 0)
                 {
@@ -77,7 +95,7 @@ namespace Dadstorm
                 }
                 if (operatorService.RepCrash)
                 {
-                    pool[0].Abort();
+                    return;
                 }
 
                 
@@ -98,7 +116,7 @@ namespace Dadstorm
 
                 if (operatorService.RepCrash)
                 {
-                    pool[0].Abort();
+                    return;
                 }
 
             }

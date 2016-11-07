@@ -217,6 +217,13 @@ namespace Dadstorm
         /// </summary>
         public bool Unique(Tuple t)
         {
+            foreach(Tuple tuple in threadPool.TuplesRead)
+            {
+                if (threadPool.TuplesRead.Contains(t))
+                {
+                    return false;
+                }
+            }
             return true;
         }
 
