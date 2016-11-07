@@ -227,7 +227,7 @@ namespace Dadstorm
         {
             foreach(Tuple tuple in threadPool.TuplesRead)
             {
-                int param = Int32.Parse(repInfo.Operator_param[0]);
+                int param = Int32.Parse((string) repInfo.Operator_param[0]);
                 if (t.Index(param).Equals(tuple.Index(param)))
                 {
                     return false;
@@ -257,9 +257,9 @@ namespace Dadstorm
         /// </summary>
         public bool Filter(Tuple t)
         {
-            int param = Int32.Parse(repInfo.Operator_param[0]);
-            string condition = repInfo.Operator_param[1];
-            int value = Int32.Parse(repInfo.Operator_param[2]);
+            int param = Int32.Parse((string) repInfo.Operator_param[0]);
+            string condition = (string) repInfo.Operator_param[1];
+            int value = Int32.Parse((string) repInfo.Operator_param[2]);
             if (condition.Equals("<"))
                 return param < value;
             else if (condition.Equals(">"))
