@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -295,7 +296,45 @@ namespace Dadstorm
         public bool Custom(Tuple t)
         {
             //TODO
-            return true;
+            //WARNING THE FOLLOWING CONTENT IS FOR PRO MLG PLAYERS ONLY 
+            string code = (string)repInfo.Operator_param[0];
+            string className = (string)repInfo.Operator_param[1];
+            Assembly assembly = Assembly.Load(code);
+            // Walk through each type in the assembly looking for our class
+            foreach (Type type in assembly.GetTypes())
+            {
+                if (type.IsClass == true)
+                {
+                    if (type.FullName.EndsWith("." + className))
+                    {
+                        // create an instance of the object
+                        object ClassObj = Activator.CreateInstance(type);
+
+                        // Dynamically Invoke the method
+                        List<string> l = new List<string>();
+                        l.Add("a");
+                        l.Add("b");
+                        l.Add("c");
+                        object[] args = new object[] { l };
+                        object resultObject = type.InvokeMember("CustomOperation",
+                          BindingFlags.Default | BindingFlags.InvokeMethod,
+                               null,
+                               ClassObj,
+                               args);
+                        IList<IList<string>> result = (IList<IList<string>>)resultObject;
+                        Console.WriteLine("Map call result was: ");
+                        foreach (IList<string> tuple in result)
+                        {
+                            Console.Write("tuple: ");
+                            foreach (string s in tuple)
+                                Console.Write(s + " ,");
+                            Console.WriteLine();
+                        }
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         /// <summary>
