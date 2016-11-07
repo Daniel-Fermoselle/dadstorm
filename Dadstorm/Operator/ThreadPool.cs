@@ -63,14 +63,16 @@ namespace Dadstorm
         /// <summary>
         /// AssyncInvoke inserts tuple in bufferRead.
         /// </summary>
-        /// <param name="tuple">Tuple that will be added</param>
-        public void AssyncInvoke(Tuple tuple)
+        /// <param name="t">Tuple that will be added</param>
+        public void AssyncInvoke(Tuple t)
         {
-            //Add tuple to bufferRead
-            bufferRead.Produce(tuple);
-            tuplesRead.Add(tuple);
+            //Mark tuple as read
+            tuplesRead.Add(t);
 
-            Console.WriteLine("Submitted tuple " + tuple.ToString() + "to buffer of Read Tuples");
+            //Add tuple to bufferRead
+            bufferRead.Produce(t);
+
+            Console.WriteLine("Submitted tuple " + t.ToString() + "to buffer of Read Tuples");
         }
 
         /// <summary>
@@ -83,22 +85,32 @@ namespace Dadstorm
                 //Get tuple from bufferRead
                 Tuple t = bufferRead.Consume();
 
+                Console.WriteLine("Consumed tuple " + t.ToString() + "from buffer of Read Tuples");
+
+                //Processing tuple
                 if (operatorService.processTuple(t))
                 {
                     bufferProcessed.Produce(t);
+                    Console.WriteLine("Processed tuple " + t.ToString() + "and accepted.");
+                }
+                else
+                {
+                    Console.WriteLine("Processed tuple " + t.ToString() + "and rejected.");
                 }
 
+                //Check if Interval action was requested
                 if (operatorService.RepInterval != 0)
                 {
+                    Console.WriteLine("Thread is going to sleep for" + operatorService.RepInterval.ToString());
                     Thread.Sleep(operatorService.RepInterval);
                     operatorService.RepInterval = 0;
+                    operatorService.RepStatus = "working";
                 }
                 if (operatorService.RepCrash)
                 {
+                    Console.WriteLine("HELP ME I AM GOING TO CRASH!! NOOOOO!!");
                     return;
-                }
-
-                
+                }                
             }
         }
 
@@ -112,13 +124,15 @@ namespace Dadstorm
                 //Gets tuple from bufferProcessed
                 Tuple t = bufferRead.Consume();
 
-                //TODO Send tuple to the next Operator
+                Console.WriteLine("Consumed tuple " + t.ToString() + "from buffer of Processed Tuples");
+
+                //Sends tuple to the next Operator
+                operatorService.SendTuple(t);
 
                 if (operatorService.RepCrash)
                 {
                     return;
                 }
-
             }
         }
 

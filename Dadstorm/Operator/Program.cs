@@ -123,6 +123,9 @@ namespace Dadstorm
             set { repStatus = value; }
         }
 
+        /// <summary>
+        /// RepCrash setter and getter.
+        /// </summary>
         public bool RepCrash
         {
             get { return repCrash; }
@@ -130,10 +133,19 @@ namespace Dadstorm
             set { repCrash = value; }
         }
 
+        /// <summary>
+        /// RepFreeze setter and getter.
+        /// </summary>
         public bool RepFreeze
         {
             get { return repFreeze; }
             set { repFreeze = value; }
+        }
+
+        internal ThrPool ThreadPool
+        {
+            get { return threadPool; }
+            set { threadPool = value; }
         }
 
         /// <summary>
@@ -142,7 +154,7 @@ namespace Dadstorm
         /// </summary>
         public void Start()
         {
-            this.repStatus = "Starting";
+            this.repStatus = "starting";
             List<Tuple> tupleList = new List<Tuple>();
 
             //TODO Here comes the parser 
@@ -151,8 +163,7 @@ namespace Dadstorm
             {
                 threadPool.AssyncInvoke(t);
             }
-
-            //TODO Add entries to the dictionary.
+            this.repStatus = "working";
         }
 
         /// <summary>
@@ -162,7 +173,7 @@ namespace Dadstorm
         /// <param name="x_ms">Operator will stop for x_ms miliseconds.</param>
         public void Interval(string x_ms)
         {
-            this.repStatus = "on Interval";
+            this.repStatus = "on interval";
             int interval = Int32.Parse(x_ms);
             this.repInterval = interval;
         }
@@ -190,6 +201,7 @@ namespace Dadstorm
         public void Freeze()
         {
             //TODO
+            this.repStatus = "frozen";
             repFreeze = true;
         }
 
@@ -199,6 +211,7 @@ namespace Dadstorm
         public void Unfreeze()
         {
             //TODO
+            this.repStatus = "working";
             repFreeze = false;
         }
 
@@ -213,6 +226,7 @@ namespace Dadstorm
         /// <summary>
         /// Unique operator processing.
         /// </summary>
+        /// <param name="t">Tuple to be processed.</param>
         public bool processTuple(Tuple t)
         {
             processTuple value;
@@ -223,6 +237,7 @@ namespace Dadstorm
         /// <summary>
         /// Unique operator processing.
         /// </summary>
+        /// <param name="t">Tuple to be processed.</param>
         public bool Unique(Tuple t)
         {
             foreach(Tuple tuple in threadPool.TuplesRead)
@@ -239,6 +254,7 @@ namespace Dadstorm
         /// <summary>
         /// Count operator processing.
         /// </summary>
+        /// <param name="t">Tuple to be processed.</param>
         public bool Count(Tuple t)
         {
             return true;
@@ -247,6 +263,7 @@ namespace Dadstorm
         /// <summary>
         /// Dup operator processing.
         /// </summary>
+        /// <param name="t">Tuple to be processed.</param>
         public bool Dup(Tuple t)
         {
             return true;
@@ -255,6 +272,7 @@ namespace Dadstorm
         /// <summary>
         /// Filter operator processing.
         /// </summary>
+        /// <param name="t">Tuple to be processed.</param>
         public bool Filter(Tuple t)
         {
             int param = Int32.Parse((string) repInfo.Operator_param[0]);
@@ -273,10 +291,32 @@ namespace Dadstorm
         /// <summary>
         /// Custom operator processing.
         /// </summary>
+        /// <param name="t">Tuple to be processed.</param>
         public bool Custom(Tuple t)
         {
             //TODO
             return true;
+        }
+
+        /// <summary>
+        /// Gets PMServices to send the log.
+        /// </summary>
+        public PMServices getPMServices()
+        {
+            //Getting the PMServices object 
+            PMServices obj = (PMServices)Activator.GetObject(typeof(PMServices),repInfo.PmsUrl);
+            return obj;
+        }
+
+        /// <summary>
+        /// Sends tuples to the next Operator in the channel
+        /// </summary>
+        /// <param name="t">Tuple to be sent.</param>
+        public void SendTuple(Tuple t)
+        {
+            //Getting the OperatorServices object 
+            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), "BATATA");
+            obj.ThreadPool.AssyncInvoke(t);
         }
 
 
