@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
@@ -70,16 +72,17 @@ namespace Dadstorm
                     string urlOnly = getIPFromUrl(url);
                     PCSServices pcs = getPCSServices("tcp://" + urlOnly + ":" +
                                                       PCS_PORT + "/" + PCSSERVER_NAME);
-                    RepInfo info = new RepInfo(c.Routing, c.Operation, 
+                    RepInfo info = new RepInfo(c.SourceInput ,c.Routing, c.Operation, 
                                                c.OperationParam, getUrlsToSend(), 
-                                               getPortFromUrl(url), loggingLvl); //TODO send url for service?
+                                               getPortFromUrl(url), loggingLvl, 
+                                               "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME);
 
                     //Connection with the operator
                     RepServices rs = getRepServices(url);
 
                     //Create replica
                     pcs.createOperator(info.Port);
-                    //TODO rs.Populate(info); //Initializating operator
+                    rs.Populate(info); //Initializating operator
 
                     //Save replica service
                     ArrayList array;
@@ -91,6 +94,7 @@ namespace Dadstorm
 
         public void Start(string operator_id)
         {
+            //TODO Start needs to send repInfo
             ArrayList array;
             repServices.TryGetValue(operator_id, out array);
             for (int i = 0; i < array.Count; i++)
@@ -276,7 +280,7 @@ namespace Dadstorm
                 repServices.TryGetValue(opx, out replicas);
                 for (int i = 0; i < replicas.Count; i++)
                 {
-                    ((RepServices)replicas[i]).ShutDown();
+                    ((RepServices)replicas[i]).Crash();
                 }
             }
         }
@@ -347,6 +351,19 @@ namespace Dadstorm
         public void SendToLog(string msg)
         {
             form.Invoke(printToForm, new object[] { msg });
+        }
+
+        public string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new Exception("Local IP Address Not Found!");
         }
     }
 }
