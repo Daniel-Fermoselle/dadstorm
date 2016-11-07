@@ -77,6 +77,11 @@ namespace Dadstorm
         private bool repCrash = false;
 
         /// <summary>
+        /// Bool that signs when the process will crash.
+        /// </summary>
+        private bool repFreeze = false;
+
+        /// <summary>
         /// Dictionaru with methods to process tuples.
         /// </summary>
         private Dictionary<string, processTuple> processors;
@@ -123,6 +128,12 @@ namespace Dadstorm
             get { return repCrash; }
 
             set { repCrash = value; }
+        }
+
+        public bool RepFreeze
+        {
+            get { return repFreeze; }
+            set { repFreeze = value; }
         }
 
         /// <summary>
@@ -189,11 +200,6 @@ namespace Dadstorm
         }
 
         /// <summary>
-        /// Response to a ShutDown command.
-        /// </summary>
-        public void ShutDown() { }
-
-        /// <summary>
         /// Response to a Populate command.
         /// </summary>
         public void Populate(RepInfo info)
@@ -206,7 +212,6 @@ namespace Dadstorm
         /// </summary>
         public bool processTuple(Tuple t)
         {
-            //TODO Do I have to initialize value?
             processTuple value;
             processors.TryGetValue(this.repInfo.Operator_spec, out value);
             return value(t);
@@ -219,7 +224,8 @@ namespace Dadstorm
         {
             foreach(Tuple tuple in threadPool.TuplesRead)
             {
-                if (threadPool.TuplesRead.Contains(t))
+                int param = Int32.Parse(repInfo.Operator_param[0]);
+                if (t.Index(param).Equals(tuple.Index(param)))
                 {
                     return false;
                 }
@@ -248,7 +254,17 @@ namespace Dadstorm
         /// </summary>
         public bool Filter(Tuple t)
         {
-            return true;
+            int param = Int32.Parse(repInfo.Operator_param[0]);
+            string condition = repInfo.Operator_param[1];
+            int value = Int32.Parse(repInfo.Operator_param[2]);
+            if (condition.Equals("<"))
+                return param < value;
+            else if (condition.Equals(">"))
+                return param > value;
+            else if (condition.Equals("="))
+                return param == value;
+            else
+                return false;
         }
 
         /// <summary>
@@ -256,6 +272,7 @@ namespace Dadstorm
         /// </summary>
         public bool Custom(Tuple t)
         {
+            //TODO
             return true;
         }
 
@@ -279,6 +296,16 @@ namespace Dadstorm
         public Tuple(List<string> tuple)
         {
             this.elements = tuple;
+        }
+
+        /// <summary>
+        /// Index of an element.
+        /// </summary>
+        public string Index(int i)
+        {
+            string[] elements;
+            elements = this.elements.ToArray();
+            return elements[i];
         }
 
         /// <summary>
