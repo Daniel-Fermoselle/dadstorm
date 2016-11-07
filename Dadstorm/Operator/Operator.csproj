@@ -60,6 +60,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CircularBuffer.cs" />
+    <Compile Include="OpParser.cs" />
     <Compile Include="ThreadPool.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
