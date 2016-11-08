@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
@@ -83,6 +84,11 @@ namespace Dadstorm
         private bool repFreeze = false;
 
         /// <summary>
+        /// Bool that signs when the process will crash.
+        /// </summary>
+        private Tuple tupleProcessed;
+
+        /// <summary>
         /// Dictionaru with methods to process tuples.
         /// </summary>
         private Dictionary<string, processTuple> processors;
@@ -147,6 +153,12 @@ namespace Dadstorm
         {
             get { return threadPool; }
             set { threadPool = value; }
+        }
+
+        internal Tuple TupleProcessed
+        {
+            get { return tupleProcessed;}
+            set{ tupleProcessed = value;}
         }
 
         /// <summary>
@@ -247,6 +259,7 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Unique(Tuple t)
         {
+            tupleProcessed = t;
             foreach(Tuple tuple in threadPool.TuplesRead)
             {
                 int param = Int32.Parse((string) repInfo.Operator_param[0]);
@@ -264,6 +277,7 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Count(Tuple t)
         {
+            tupleProcessed = t;
             return true;
         }
 
@@ -273,6 +287,7 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Dup(Tuple t)
         {
+            tupleProcessed = t;
             return true;
         }
 
@@ -282,6 +297,7 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Filter(Tuple t)
         {
+            tupleProcessed = t;
             int param = Int32.Parse((string) repInfo.Operator_param[0]);
             string condition = (string) repInfo.Operator_param[1];
             int value = Int32.Parse((string) repInfo.Operator_param[2]);
@@ -301,9 +317,9 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Custom(Tuple t)
         {
-            //TODO
-            //WARNING THE FOLLOWING CONTENT IS FOR PRO MLG PLAYERS ONLY 
-            string code = (string)repInfo.Operator_param[0];
+            tupleProcessed = t;//WARNING
+            string path = (string)repInfo.Operator_param[0];
+            byte[] code = File.ReadAllBytes(path);
             string className = (string)repInfo.Operator_param[1];
             Assembly assembly = Assembly.Load(code);
             // Walk through each type in the assembly looking for our class
@@ -318,9 +334,10 @@ namespace Dadstorm
 
                         // Dynamically Invoke the method
                         List<string> l = new List<string>();
-                        l.Add("a");
-                        l.Add("b");
-                        l.Add("c");
+                        foreach(string element in t.Elements)
+                        {
+                            l.Add(element);
+                        }
                         object[] args = new object[] { l };
                         object resultObject = type.InvokeMember("CustomOperation",
                           BindingFlags.Default | BindingFlags.InvokeMethod,
@@ -354,7 +371,7 @@ namespace Dadstorm
         }
 
         /// <summary>
-        /// Sends tuples to the next Operator in the channel
+        /// Sends tuples to the next Operator in the channel.
         /// </summary>
         /// <param name="t">Tuple to be sent.</param>
         public void SendTuple(Tuple t)
@@ -364,6 +381,18 @@ namespace Dadstorm
             obj.ThreadPool.AssyncInvoke(t);
         }
 
+        /// <summary>
+        /// Notifies PM with a message.
+        /// </summary>
+        /// <param name="t">Message sent to PM.</param>
+        public void NotifyPM(string msg)
+        {
+            if (repInfo.LoggingLvl.Equals("full"))
+            {
+                PMServices service = getPMServices();
+                service.SendToLog(msg);
+            }
+        }
 
     }
 
@@ -384,6 +413,12 @@ namespace Dadstorm
         public Tuple(List<string> tuple)
         {
             this.elements = tuple;
+        }
+
+        public List<string> Elements
+        {
+            get { return elements; }
+            set { elements = value;}
         }
 
         /// <summary>

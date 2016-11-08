@@ -99,7 +99,8 @@ namespace Dadstorm
                 //Processing tuple
                 if (operatorService.processTuple(t))
                 {
-                    bufferProcessed.Produce(t);
+                    bufferProcessed.Produce(operatorService.TupleProcessed);//WARNING
+                    operatorService.NotifyPM("<" + t.toString() + ">");
                     Console.WriteLine("Processed tuple " + t.ToString() + "and accepted.");
                 }
                 else

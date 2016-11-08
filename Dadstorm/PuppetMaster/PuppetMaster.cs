@@ -12,8 +12,8 @@ namespace Dadstorm
 {
     public class PuppetMaster 
     {
-        private const int PCS_PORT = 10000;
-        private const int PM_PORT  = 10001;
+        private const int PCS_PORT = 10001;
+        private const int PM_PORT  = 10000;
         private const string PMSERVICE_NAME  = "PMServices";
         private const string PCSSERVER_NAME  = "PCSServer";
         private const string DEFAULT_LOGGING = "light";
