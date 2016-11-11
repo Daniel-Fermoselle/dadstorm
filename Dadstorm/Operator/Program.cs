@@ -310,6 +310,7 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Filter(Tuple t)
         {
+            tupleProcessed = new List<Tuple>();
             string param = (string) repInfo.Operator_param[2];
             string condition = (string) repInfo.Operator_param[1];
             string value = t.Index(Int32.Parse((string) repInfo.Operator_param[0])-1);
