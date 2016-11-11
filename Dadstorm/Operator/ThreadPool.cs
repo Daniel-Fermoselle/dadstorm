@@ -158,7 +158,7 @@ namespace Dadstorm
                 //Check if Interval action was requested
                 if (operatorService.RepInterval != 0)
                 {
-                    Console.WriteLine("Sleeping for" + operatorService.RepInterval.ToString());
+                    Console.WriteLine("Sleeping for: " + operatorService.RepInterval.ToString());
                     Thread.Sleep(operatorService.RepInterval);
                     operatorService.RepInterval = 0;
                     operatorService.RepStatus = "working";

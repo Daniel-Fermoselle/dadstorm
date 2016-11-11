@@ -189,9 +189,10 @@ namespace Dadstorm
                     {
                         threadPool.AssyncInvoke(t);
                     }
-                    this.repStatus = "working";
                 }
             }
+            this.repStatus = "working";
+
         }
 
         /// <summary>
@@ -211,7 +212,7 @@ namespace Dadstorm
         /// </summary>
         public void Status()
         {
-            Console.Write("This replica is " + this.repStatus + "...");
+            Console.WriteLine("This replica is " + this.repStatus + "...");
         }
 
         /// <summary>
