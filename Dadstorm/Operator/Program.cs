@@ -88,7 +88,7 @@ namespace Dadstorm
         /// <summary>
         /// Bool that signs when the process will crash.
         /// </summary>
-        private Tuple tupleProcessed;
+        private IList<Tuple> tupleProcessed;
 
         /// <summary>
         /// Dictionaru with methods to process tuples.
@@ -157,7 +157,7 @@ namespace Dadstorm
             set { threadPool = value; }
         }
 
-        internal Tuple TupleProcessed
+        internal IList<Tuple> TupleProcessed
         {
             get { return tupleProcessed;}
             set{ tupleProcessed = value;}
@@ -259,7 +259,8 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Unique(Tuple t)
         {
-            tupleProcessed = t;
+            tupleProcessed = new List<Tuple>();
+            tupleProcessed.Add(t);
             foreach(Tuple tuple in threadPool.TuplesRead)
             {
                 int param = Int32.Parse((string) repInfo.Operator_param[0]);
@@ -268,6 +269,7 @@ namespace Dadstorm
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -277,7 +279,12 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Count(Tuple t)
         {
-            tupleProcessed = t;
+            IList<string> countTuple = new List<string>();
+            countTuple.Add(threadPool.TuplesRead.Count.ToString());
+            Tuple tuple = new Tuple(countTuple);
+            tupleProcessed = new List<Tuple>();
+            tupleProcessed.Add(tuple);
+
             return true;
         }
 
@@ -287,7 +294,8 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Dup(Tuple t)
         {
-            tupleProcessed = t;
+            tupleProcessed = new List<Tuple>();
+            tupleProcessed.Add(t);
             return true;
         }
 
@@ -297,7 +305,8 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Filter(Tuple t)
         {
-            tupleProcessed = t;
+            tupleProcessed = new List<Tuple>();
+            tupleProcessed.Add(t);
             int param = Int32.Parse((string) repInfo.Operator_param[0]);
             string condition = (string) repInfo.Operator_param[1];
             int value = Int32.Parse((string) repInfo.Operator_param[2]);
@@ -317,7 +326,7 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Custom(Tuple t)
         {
-            tupleProcessed = t;//WARNING
+            tupleProcessed = new List<Tuple>();
             string path = (string)repInfo.Operator_param[0];
             byte[] code = File.ReadAllBytes(path);
             string className = (string)repInfo.Operator_param[1];
@@ -348,6 +357,7 @@ namespace Dadstorm
                         Console.WriteLine("Map call result was: ");
                         foreach (IList<string> tuple in result)
                         {
+                            tupleProcessed.Add(new Tuple(tuple));
                             Console.Write("tuple: ");
                             foreach (string s in tuple)
                                 Console.Write(s + " ,");
