@@ -45,7 +45,7 @@ namespace Dadstorm
             }
         }
 
-        public List<Tuple> processFile()
+        public IList<Tuple> processFile()
         {
             readFile();
             String currentLine = lines[line];
@@ -62,8 +62,8 @@ namespace Dadstorm
                 {
                     //splits=currentLine.Split(", ");
                     splits = currentLine.Split(new string[] { ", " }, StringSplitOptions.None);
-                    List<String> temp = new List<string>();
-                    foreach (String s in splits)
+                    IList<string> temp = new List<string>();
+                    foreach (string s in splits)
                     {
                         temp.Add(s);
                     }
@@ -83,7 +83,7 @@ namespace Dadstorm
             set { path = value; }
         }
 
-        public List<Tuple> getTuples()
+        public IList<Tuple> getTuples()
         {
             return tuples;
         }

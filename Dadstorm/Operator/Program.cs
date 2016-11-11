@@ -170,7 +170,7 @@ namespace Dadstorm
         public void Start()
         {
             this.repStatus = "starting";
-            List<Tuple> tupleList = new List<Tuple>();
+            IList<Tuple> tupleList = new List<Tuple>();
 
             foreach(string s in repInfo.Input)
             {
@@ -221,7 +221,6 @@ namespace Dadstorm
         /// </summary>
         public void Freeze()
         {
-            //TODO
             this.repStatus = "frozen";
             repFreeze = true;
         }
@@ -231,7 +230,6 @@ namespace Dadstorm
         /// </summary>
         public void Unfreeze()
         {
-            //TODO
             this.repStatus = "working";
             repFreeze = false;
         }
@@ -406,9 +404,7 @@ namespace Dadstorm
         /// </summary>
         public override object InitializeLifetimeService()
         {
-
             return null;
-
         }
 
     }
@@ -422,17 +418,17 @@ namespace Dadstorm
         /// <summary>
         /// List with the elements of the Tuple.
         /// </summary>
-        private List<string> elements;
+        private IList<string> elements;
 
         /// <summary>
         /// Tuple Contructor.
         /// </summary>
-        public Tuple(List<string> tuple)
+        public Tuple(IList<string> tuple)
         {
             this.elements = tuple;
         }
 
-        public List<string> Elements
+        public IList<string> Elements
         {
             get { return elements; }
             set { elements = value;}
@@ -443,9 +439,7 @@ namespace Dadstorm
         /// </summary>
         public string Index(int i)
         {
-            string[] elements;
-            elements = this.elements.ToArray();
-            return elements[i];
+            return this.elements[i];
         }
 
         /// <summary>

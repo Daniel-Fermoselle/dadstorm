@@ -26,7 +26,7 @@ namespace Dadstorm
         /// <summary>
         /// List of tuples read.
         /// </summary>
-        private List<Tuple> tuplesRead;
+        private IList<Tuple> tuplesRead;
 
         /// <summary>
         /// CircularBuffer constructor.
@@ -56,7 +56,7 @@ namespace Dadstorm
         /// <summary>
         /// TuplesRead setter and getter.
         /// </summary>
-        internal List<Tuple> TuplesRead
+        internal IList<Tuple> TuplesRead
         {
             get { return tuplesRead; }
             set { tuplesRead = value; }
@@ -135,6 +135,7 @@ namespace Dadstorm
                 Console.WriteLine("Consumed tuple " + t.ToString() + "from buffer of Processed Tuples");
 
                 //Sends tuple to the next Operator
+                //WARNING
                 operatorService.SendTuple(t);
 
                 if (operatorService.RepCrash)
