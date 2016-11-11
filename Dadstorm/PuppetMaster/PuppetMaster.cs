@@ -172,11 +172,11 @@ namespace Dadstorm
             }
         }
 
-        public void Crash(string processname)
+        public void Crash(string opx, string rep)
         {   
             //Asynchronous call without callback
             // Create delegate to remote method
-            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(processname).Crash);
+            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(opx, rep).Crash);
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
@@ -185,14 +185,14 @@ namespace Dadstorm
             RemAr.AsyncWaitHandle.WaitOne();
             RemoteDel.EndInvoke(RemAr);
 
-            SendToLog("Crash " + processname);
+            SendToLog("Crash " + opx + " " + rep);
         }
 
-        public void Freeze(string processname)
+        public void Freeze(string opx, string rep)
         {
             //Asynchronous call without callback
             // Create delegate to remote method
-            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(processname).Freeze);
+            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(opx, rep).Freeze);
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
@@ -201,14 +201,14 @@ namespace Dadstorm
             RemAr.AsyncWaitHandle.WaitOne();
             RemoteDel.EndInvoke(RemAr);
 
-            SendToLog("Freeze " + processname);
+            SendToLog("Freeze " + opx + " " + rep);
         }
 
-        public void Unfreeze(string processname)
+        public void Unfreeze(string opx, string rep)
         {
             //Asynchronous call without callback
             // Create delegate to remote method
-            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(processname).Unfreeze);
+            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(opx, rep).Unfreeze);
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
@@ -217,7 +217,7 @@ namespace Dadstorm
             RemAr.AsyncWaitHandle.WaitOne();
             RemoteDel.EndInvoke(RemAr);
 
-            SendToLog("Unfreeze " + processname);
+            SendToLog("Unfreeze " + opx + " " + rep);
         }
 
         public void Wait(string x_ms)
@@ -258,15 +258,15 @@ namespace Dadstorm
             }
             else if (splitedCommand[0].StartsWith("Crash"))
             {
-                Crash(splitedCommand[1]);
+                Crash(splitedCommand[1], splitedCommand[2]);
             }
             else if (splitedCommand[0].StartsWith("Freeze"))
             {
-                Freeze(splitedCommand[1]);
+                Freeze(splitedCommand[1], splitedCommand[2]);
             }
             else if (splitedCommand[0].StartsWith("Unfreeze"))
             {
-                Unfreeze(splitedCommand[1]);
+                Unfreeze(splitedCommand[1], splitedCommand[2]);
             }
             else if (splitedCommand[0].StartsWith("Wait"))
             {
@@ -340,12 +340,11 @@ namespace Dadstorm
             return subDic;
         }
 
-        private RepServices getReplicaServiceFromProcessname(string processname)
+        private RepServices getReplicaServiceFromProcessname(string opx, string rep)
         {
-            string[] processnameSplited = processname.Split(' ');
             ArrayList replicasServices;
-            repServices.TryGetValue(processnameSplited[0], out replicasServices);
-            int i = Int32.Parse(processnameSplited[1]);
+            repServices.TryGetValue(opx, out replicasServices);
+            int i = Int32.Parse(rep);
             return (RepServices) replicasServices[i];
         }
 

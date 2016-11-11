@@ -86,17 +86,20 @@ namespace Dadstorm
 
         private void button4_Click(object sender, EventArgs e)
         {
-            puppetMaster.Crash(textBox3.Text);
+            string[] splitedLine = textBox3.Text.Split(' ');
+            puppetMaster.Crash(splitedLine[1], splitedLine[2]);
         }
 
         private void button6_Click(object sender, EventArgs e)
         {
-            puppetMaster.Freeze(textBox8.Text);
+            string[] splitedLine = textBox8.Text.Split(' ');
+            puppetMaster.Freeze(splitedLine[1], splitedLine[2]);
         }
 
         private void button5_Click(object sender, EventArgs e)
         {
-            puppetMaster.Unfreeze(textBox7.Text);
+            string[] splitedLine = textBox7.Text.Split(' ');
+            puppetMaster.Unfreeze(splitedLine[1], splitedLine[2]);
         }
 
         private void button7_Click(object sender, EventArgs e)
