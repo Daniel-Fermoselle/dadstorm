@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
@@ -100,8 +101,14 @@ namespace Dadstorm
         /// </summary>
         public OperatorServices()
         {
+            tupleProcessed = new List<Tuple>();
             threadPool = new ThrPool(THREAD_NUMBER, BUFFER_SIZE, this);
             processors = new Dictionary<string, processTuple>();
+            processors.Add("UNIQ", Unique);
+            processors.Add("COUNT", Count);
+            processors.Add("DUP", Dup);
+            processors.Add("FILTER", Filter);
+            processors.Add("CUSTOM", Custom);
         }
 
         /// <summary>
@@ -240,6 +247,7 @@ namespace Dadstorm
         public void Populate(RepInfo info)
         {
             this.repInfo = info;
+            this.repStatus = "Initialized";
         }
 
         /// <summary>
@@ -259,8 +267,6 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Unique(Tuple t)
         {
-            tupleProcessed = new List<Tuple>();
-            tupleProcessed.Add(t);
             foreach(Tuple tuple in threadPool.TuplesRead)
             {
                 int param = Int32.Parse((string) repInfo.Operator_param[0]);
@@ -270,6 +276,7 @@ namespace Dadstorm
                 }
             }
 
+            tupleProcessed.Add(t);
             return true;
         }
 
@@ -282,7 +289,6 @@ namespace Dadstorm
             IList<string> countTuple = new List<string>();
             countTuple.Add(threadPool.TuplesRead.Count.ToString());
             Tuple tuple = new Tuple(countTuple);
-            tupleProcessed = new List<Tuple>();
             tupleProcessed.Add(tuple);
 
             return true;
@@ -294,7 +300,6 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Dup(Tuple t)
         {
-            tupleProcessed = new List<Tuple>();
             tupleProcessed.Add(t);
             return true;
         }
@@ -305,17 +310,14 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Filter(Tuple t)
         {
-            tupleProcessed = new List<Tuple>();
-            tupleProcessed.Add(t);
-            int param = Int32.Parse((string) repInfo.Operator_param[0]);
+            string param = (string) repInfo.Operator_param[2];
             string condition = (string) repInfo.Operator_param[1];
-            int value = Int32.Parse((string) repInfo.Operator_param[2]);
-            if (condition.Equals("<"))
-                return param < value;
-            else if (condition.Equals(">"))
-                return param > value;
-            else if (condition.Equals("="))
-                return param == value;
+            string value = t.Index(Int32.Parse((string) repInfo.Operator_param[0])-1);
+            if (condition.Equals("="))
+            {
+                tupleProcessed.Add(t);
+                return param.Equals(value);
+            }
             else
                 return false;
         }
@@ -326,7 +328,6 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Custom(Tuple t)
         {
-            tupleProcessed = new List<Tuple>();
             string path = (string)repInfo.Operator_param[0];
             byte[] code = File.ReadAllBytes(path);
             string className = (string)repInfo.Operator_param[1];
@@ -386,8 +387,23 @@ namespace Dadstorm
         /// <param name="t">Tuple to be sent.</param>
         public void SendTuple(Tuple t)
         {
+            ArrayList urls = new ArrayList();
+            foreach (string opx in repInfo.SendInfoUrls.Keys) {
+                repInfo.SendInfoUrls.TryGetValue(opx, out urls);
+            }
+            if (urls.Count == 0)
+            {
+                foreach(Tuple tuple in tupleProcessed)
+                {
+                    Console.WriteLine(tuple.toString());
+                }
+                return;
+            }
+            //TODO Hashing
+            string url;
+            url = (string) urls[0];
             //Getting the OperatorServices object 
-            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), "BATATA");
+            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
             obj.ThreadPool.AssyncInvoke(t);
         }
 

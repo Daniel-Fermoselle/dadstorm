@@ -56,6 +56,7 @@ namespace Dadstorm
             p.readFile(@filePath);
             config = p.processFile();
             commands = p.Commands;
+            loggingLvl = p.LoggingLvl;
             StartProcesses();
         }
         
