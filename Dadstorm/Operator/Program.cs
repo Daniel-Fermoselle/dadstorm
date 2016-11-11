@@ -158,13 +158,13 @@ namespace Dadstorm
             set { repFreeze = value; }
         }
 
-        internal ThrPool ThreadPool
+        public ThrPool ThreadPool
         {
             get { return threadPool; }
             set { threadPool = value; }
         }
 
-        internal IList<Tuple> TupleProcessed
+        public IList<Tuple> TupleProcessed
         {
             get { return tupleProcessed;}
             set{ tupleProcessed = value;}
@@ -389,24 +389,29 @@ namespace Dadstorm
         /// <param name="t">Tuple to be sent.</param>
         public void SendTuple(Tuple t)
         {
-            ArrayList urls = new ArrayList();
+            bool last = true;
+            ArrayList urls;
             foreach (string opx in repInfo.SendInfoUrls.Keys) {
                 repInfo.SendInfoUrls.TryGetValue(opx, out urls);
-            }
-            if (urls.Count == 0)
-            {
-                foreach(Tuple tuple in tupleProcessed)
+                if(urls.Count >= 1)
                 {
-                    Console.WriteLine(tuple.toString());
+                    last = false;
+                    foreach (string url in urls)
+                    {
+                        //TODO Hashing
+                        //Getting the OperatorServices object 
+                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                        obj.ping("PING!");
+                        obj.AddTupleToBuffer(t);
+                    }
                 }
+            }
+            if (last)
+            {
+                Console.WriteLine("SOU O ULTIMO");
                 return;
             }
-            //TODO Hashing
-            string url;
-            url = (string) urls[0];
-            //Getting the OperatorServices object 
-            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-            obj.ThreadPool.AssyncInvoke(t);
+
         }
 
         /// <summary>
@@ -433,6 +438,11 @@ namespace Dadstorm
         public override object InitializeLifetimeService()
         {
             return null;
+        }
+
+        public void AddTupleToBuffer(Tuple t)
+        {
+            this.threadPool.AssyncInvoke(t);
         }
 
     }
