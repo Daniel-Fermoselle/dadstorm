@@ -48,7 +48,9 @@ namespace Dadstorm
             pool[i] = new Thread(new ThreadStart(ConsumeRead));
             pool[i++].Start();
             pool[i] = new Thread(new ThreadStart(ConsumeProcessed));
-            pool[i].Start();
+            pool[i++].Start();
+            pool[i] = new Thread(new ThreadStart(StateRefresh));
+            pool[i++].Start();
         }
 
         /// <summary>
@@ -91,6 +93,14 @@ namespace Dadstorm
         {
             while (true)
             {
+                //Checks availability to process a tuple
+                while (operatorService.RepInterval != 0 || operatorService.RepFreeze) { }
+                if (operatorService.RepCrash)
+                {
+                    Console.WriteLine("HELP ME I AM GOING TO CRASH!! NOOOOO!!");
+                    return;
+                }
+
                 //Get tuple from bufferRead
                 Tuple t = bufferRead.Consume();
 
@@ -108,23 +118,7 @@ namespace Dadstorm
                     Console.WriteLine("Processed tuple " + t.ToString() + "and rejected.");
                 }
 
-                //Check if Interval action was requested
-                if (operatorService.RepInterval != 0)
-                {
-                    Console.WriteLine("Thread is going to sleep for" + operatorService.RepInterval.ToString());
-                    Thread.Sleep(operatorService.RepInterval);
-                    operatorService.RepInterval = 0;
-                    operatorService.RepStatus = "working";
-                }
-                if (operatorService.RepFreeze)
-                {
-                    Thread.Sleep(100);
-                }
-                if (operatorService.RepCrash)
-                {
-                    Console.WriteLine("HELP ME I AM GOING TO CRASH!! NOOOOO!!");
-                    return;
-                }                
+             
             }
         }
 
@@ -149,6 +143,34 @@ namespace Dadstorm
                 }
             }
         }
+
+        /// <summary>
+        /// State Refresh checks if there is any commands that affect the threads.
+        /// </summary>
+        public void StateRefresh()
+        {
+            while (true)
+            {
+                //Check if Interval action was requested
+                if (operatorService.RepInterval != 0)
+                {
+                    Console.WriteLine("Sleeping for" + operatorService.RepInterval.ToString());
+                    Thread.Sleep(operatorService.RepInterval);
+                    operatorService.RepInterval = 0;
+                    operatorService.RepStatus = "working";
+                }
+                if (operatorService.RepFreeze)
+                {
+                    Thread.Sleep(100);
+                }
+                if (operatorService.RepCrash)
+                {
+                    Console.WriteLine("HELP ME I AM GOING TO CRASH!! NOOOOO!!");
+                    return;
+                }
+            }
+        }
+
 
     }
 

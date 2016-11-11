@@ -49,7 +49,7 @@ namespace Dadstorm
         /// <summary>
         /// Number of threads to be created.
         /// </summary>
-        private const int THREAD_NUMBER = 2;
+        private const int THREAD_NUMBER = 3;
         /// <summary>
         /// Size of the circular buffers.
         /// </summary>
@@ -174,7 +174,7 @@ namespace Dadstorm
 
             foreach(string s in repInfo.Input)
             {
-                if (s.Contains(".dat"))
+                if (s.Contains(".data"))
                 {
                     OpParser parser = new OpParser(s);
                     tupleList = parser.processFile();
