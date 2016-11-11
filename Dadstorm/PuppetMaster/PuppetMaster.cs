@@ -73,7 +73,7 @@ namespace Dadstorm
                     PCSServices pcs = getPCSServices("tcp://" + urlOnly + ":" +
                                                       PCS_PORT + "/" + PCSSERVER_NAME);
                     RepInfo info = new RepInfo(c.SourceInput ,c.Routing, c.Operation, 
-                                               c.OperationParam, getUrlsToSend(), 
+                                               c.OperationParam, getUrlsToSend(opx), 
                                                getPortFromUrl(url), loggingLvl, 
                                                "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME);
 
@@ -316,32 +316,27 @@ namespace Dadstorm
             return splitedUrl[2].Split(':')[1];
         }
 
-        public Dictionary<string, Dictionary<string, ArrayList>> getUrlsToSend()
+        public Dictionary<string, ArrayList> getUrlsToSend(string OPX)
         {
-            Dictionary<string, Dictionary<string, ArrayList>> toReturn = new Dictionary<string, Dictionary<string, ArrayList>>();
-            foreach (string OPX in config.Keys)
+            Dictionary<string, ArrayList> subDic = new Dictionary<string, ArrayList>();
+            foreach (string OPX2 in config.Keys)
             {
-                Dictionary<string, ArrayList> subDic = new Dictionary<string, ArrayList>();
-                foreach (string OPX2 in config.Keys)
+                ArrayList outputs = new ArrayList();
+                ConfigInfo c;
+                config.TryGetValue(OPX2, out c);
+                foreach(string input in c.SourceInput)
                 {
-                    ArrayList outputs = new ArrayList();
-                    ConfigInfo c;
-                    config.TryGetValue(OPX2, out c);
-                    foreach(string input in c.SourceInput)
+                    if (input.Equals(OPX))
                     {
-                        if (input.Equals(OPX))
+                        foreach(string url in c.Urls)
                         {
-                           foreach(string url in c.Urls)
-                            {
-                                outputs.Add(url);
-                            }
+                            outputs.Add(url);
                         }
                     }
-                    subDic.Add(OPX2, outputs);
                 }
-                toReturn.Add(OPX, subDic);
+                subDic.Add(OPX2, outputs);
             }
-            return toReturn;
+            return subDic;
         }
 
         private RepServices getReplicaServiceFromProcessname(string processname)
