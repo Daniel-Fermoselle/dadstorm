@@ -83,7 +83,7 @@ namespace Dadstorm
 
                     //Create replica
                     pcs.createOperator(info.Port);
-                    rs.ping("POGCHAMP");
+                    rs.ping("Ping");
                     rs.Populate(info); //Initializating operator
 
                     if (!repServices.ContainsKey(opx))
