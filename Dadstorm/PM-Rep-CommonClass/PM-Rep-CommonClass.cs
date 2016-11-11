@@ -19,6 +19,8 @@ namespace Dadstorm
         void Unfreeze();
 
         void Populate(RepInfo info);
+
+        void ping(string msg);
     }
 
     public interface PMServices

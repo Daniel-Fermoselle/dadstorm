@@ -19,7 +19,9 @@ namespace Dadstorm
         /// <summary>
         /// Name of the service that will be published.
         /// </summary>
-        private const string OPSERVICE_NAME = "OperatorServices";
+        private const string OPSERVICE_NAME = "op";
+
+        static OperatorServices opServices;
 
         /// <summary>
         /// Main publishes OperatorServices at a certain url
@@ -34,7 +36,7 @@ namespace Dadstorm
             ChannelServices.RegisterChannel(serverChannel, false);
 
             // Expose an object form RepServices for remote calls.
-            OperatorServices opServices = new OperatorServices();
+            opServices = new OperatorServices();
             RemotingServices.Marshal(opServices, OPSERVICE_NAME, typeof(OperatorServices));
 
             System.Console.WriteLine("Press <enter> to terminate server...");
@@ -384,7 +386,7 @@ namespace Dadstorm
         /// <summary>
         /// Notifies PM with a message.
         /// </summary>
-        /// <param name="t">Message sent to PM.</param>
+        /// <param name="msg">Message sent to PM.</param>
         public void NotifyPM(string msg)
         {
             if (repInfo.LoggingLvl.Equals("full"))
@@ -392,6 +394,21 @@ namespace Dadstorm
                 PMServices service = getPMServices();
                 service.SendToLog(msg);
             }
+        }
+
+        public void ping(string msg)
+        {
+            Console.WriteLine(msg);
+        }
+
+        /// <summary>
+        /// Doesn't let service expire.
+        /// </summary>
+        public override object InitializeLifetimeService()
+        {
+
+            return null;
+
         }
 
     }
