@@ -174,8 +174,10 @@ namespace Dadstorm
         /// Response to a Start command.
         /// Sending read tuples from files to the buffer.
         /// </summary>
-        public void Start()
+        public void Start(RepInfo info)
         {
+            this.repInfo = info;
+            this.repStatus = "Initialized";
             this.repStatus = "starting";
             IList<Tuple> tupleList = new List<Tuple>();
 
@@ -243,21 +245,13 @@ namespace Dadstorm
         }
 
         /// <summary>
-        /// Response to a Populate command.
-        /// </summary>
-        public void Populate(RepInfo info)
-        {
-            this.repInfo = info;
-            this.repStatus = "Initialized";
-        }
-
-        /// <summary>
         /// Unique operator processing.
         /// </summary>
         /// <param name="t">Tuple to be processed.</param>
         public bool processTuple(Tuple t)
         {
             processTuple value;
+
             processors.TryGetValue(this.repInfo.Operator_spec, out value);
             return value(t);
         }
@@ -288,6 +282,7 @@ namespace Dadstorm
         public bool Count(Tuple t)
         {
             IList<string> countTuple = new List<string>();
+
             countTuple.Add(threadPool.TuplesRead.Count.ToString());
             Tuple tuple = new Tuple(countTuple);
             tupleProcessed.Add(tuple);
@@ -333,7 +328,9 @@ namespace Dadstorm
             string path = (string)repInfo.Operator_param[0];
             byte[] code = File.ReadAllBytes(path);
             string className = (string)repInfo.Operator_param[1];
+            string methodName = (string)repInfo.Operator_param[2];
             Assembly assembly = Assembly.Load(code);
+
             // Walk through each type in the assembly looking for our class
             foreach (Type type in assembly.GetTypes())
             {
@@ -351,7 +348,7 @@ namespace Dadstorm
                             l.Add(element);
                         }
                         object[] args = new object[] { l };
-                        object resultObject = type.InvokeMember("CustomOperation",
+                        object resultObject = type.InvokeMember(methodName,
                           BindingFlags.Default | BindingFlags.InvokeMethod,
                                null,
                                ClassObj,
@@ -391,6 +388,7 @@ namespace Dadstorm
         {
             bool last = true;
             ArrayList urls;
+
             foreach (string opx in repInfo.SendInfoUrls.Keys) {
                 repInfo.SendInfoUrls.TryGetValue(opx, out urls);
                 if(urls.Count >= 1)
@@ -486,6 +484,7 @@ namespace Dadstorm
         public string toString()
         {
             string result = "";
+
             foreach (string s in elements)
             {
                 result = result + "," + s;
