@@ -6,7 +6,7 @@ namespace Dadstorm
 {
     public interface RepServices
     {
-        void Start();
+        void Start(RepInfo info);
 
         void Interval(string x_ms);
 
@@ -17,8 +17,6 @@ namespace Dadstorm
         void Freeze();
 
         void Unfreeze();
-
-        void Populate(RepInfo info);
 
         void ping(string msg);
     }

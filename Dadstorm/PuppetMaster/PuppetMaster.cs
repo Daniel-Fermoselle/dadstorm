@@ -18,7 +18,8 @@ namespace Dadstorm
         private const string PCSSERVER_NAME  = "PCSServer";
         private const string DEFAULT_LOGGING = "light";
 
-        public delegate void StartAsyncDelegate();
+        public delegate void AsyncDelegate();
+        public delegate void StartAsyncDelegate(RepInfo info);
         public delegate void IntervalAsyncDelegate(string x_ms);
 
         private Form form;
@@ -73,18 +74,12 @@ namespace Dadstorm
                     string urlOnly = getIPFromUrl(url);
                     PCSServices pcs = getPCSServices("tcp://" + urlOnly + ":" +
                                                       PCS_PORT + "/" + PCSSERVER_NAME);
-                    RepInfo info = new RepInfo(c.SourceInput ,c.Routing, c.Operation, 
-                                               c.OperationParam, getUrlsToSend(opx), 
-                                               getPortFromUrl(url), loggingLvl, 
-                                               "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME);
-
+                    
+                    //Create replica
+                    pcs.createOperator(getPortFromUrl(url));
+                    
                     //Connection with the operator
                     RepServices rs = getRepServices(url);
-
-                    //Create replica
-                    pcs.createOperator(info.Port);
-                    rs.ping("Ping");
-                    rs.Populate(info); //Initializating operator
 
                     if (!repServices.ContainsKey(opx))
                     {
@@ -93,26 +88,39 @@ namespace Dadstorm
                     //Save replica service
                     ArrayList array;
                     repServices.TryGetValue(opx, out array);
-                    array.Add(rs); //rs=getRepServices(url)
+                    array.Add(rs); 
                 }
             }
         }
 
         public void Start(string operator_id)
         {
-            //TODO Start needs to send repInfo
+            //To initialize op
+            ConfigInfo c;
+            config.TryGetValue(operator_id, out c);
+            ArrayList urls = c.Urls;
+            string url;
+            RepServices repS;
+
             ArrayList array;
             repServices.TryGetValue(operator_id, out array);
             for (int i = 0; i < array.Count; i++)
             {
-                RepServices repS = (RepServices) array[i];
+                repS = (RepServices) array[i];
+                url  = (string) urls[i];
+                string urlOnly = getIPFromUrl(url);
+                RepInfo info = new RepInfo(c.SourceInput, c.Routing, c.Operation,
+                                               c.OperationParam, getUrlsToSend(operator_id),
+                                               getPortFromUrl(url), loggingLvl,
+                                               "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME);
+
 
                 //Asynchronous call without callback
                 // Create delegate to remote method
                 StartAsyncDelegate RemoteDel = new StartAsyncDelegate(repS.Start);
 
                 // Call delegate to remote method
-                IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
+                IAsyncResult RemAr = RemoteDel.BeginInvoke(info,null, null);
 
                 // Wait for the end of the call and then explictly call EndInvoke
                 RemAr.AsyncWaitHandle.WaitOne();
@@ -158,7 +166,7 @@ namespace Dadstorm
                     //TODO Maybe make this call receive callback 
                     //Asynchronous call without callback
                     // Create delegate to remote method
-                    StartAsyncDelegate RemoteDel = new StartAsyncDelegate(repS.Status);
+                    AsyncDelegate RemoteDel = new AsyncDelegate(repS.Status);
 
                     // Call delegate to remote method
                     IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
@@ -176,7 +184,7 @@ namespace Dadstorm
         {   
             //Asynchronous call without callback
             // Create delegate to remote method
-            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(opx, rep).Crash);
+            AsyncDelegate RemoteDel = new AsyncDelegate(getReplicaServiceFromProcessname(opx, rep).Crash);
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
@@ -192,7 +200,7 @@ namespace Dadstorm
         {
             //Asynchronous call without callback
             // Create delegate to remote method
-            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(opx, rep).Freeze);
+            AsyncDelegate RemoteDel = new AsyncDelegate(getReplicaServiceFromProcessname(opx, rep).Freeze);
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
@@ -208,7 +216,7 @@ namespace Dadstorm
         {
             //Asynchronous call without callback
             // Create delegate to remote method
-            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(getReplicaServiceFromProcessname(opx, rep).Unfreeze);
+            AsyncDelegate RemoteDel = new AsyncDelegate(getReplicaServiceFromProcessname(opx, rep).Unfreeze);
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
@@ -237,7 +245,7 @@ namespace Dadstorm
         public void ProcessSingleCommand()
         {
             //TODO add if's to avoid wrong commands
-            if(commands == null || nextCommand >= commands.Count)
+            if(commands == null || !(nextCommand < commands.Count))
             {
                 SendToLog("No commands to run");
             }

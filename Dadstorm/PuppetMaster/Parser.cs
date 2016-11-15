@@ -41,7 +41,7 @@ namespace Dadstorm
                     returnConfig.Add(ci.OperatorId, ci);
                     continue;
                 }
-                else if (currentLine.Equals("", StringComparison.Ordinal) || currentLine.StartsWith("%", StringComparison.Ordinal))
+                else if (currentLine.Equals("", StringComparison.Ordinal) || currentLine.StartsWith("%", StringComparison.Ordinal) || currentLine.Equals("\r\n", StringComparison.Ordinal))
                 {
                     continue;
                 }
