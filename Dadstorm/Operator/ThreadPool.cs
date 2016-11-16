@@ -130,7 +130,7 @@ namespace Dadstorm
             while (true)
             {
                 //Gets tuple from bufferProcessed
-                Tuple t = bufferRead.Consume();
+                Tuple t = bufferProcessed.Consume();
 
                 Console.WriteLine("Consumed tuple " + t.toString() + "from buffer of Processed Tuples");
 

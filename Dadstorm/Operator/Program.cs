@@ -261,7 +261,9 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Unique(Tuple t)
         {
-            foreach(Tuple tuple in threadPool.TuplesRead)
+            tupleProcessed = new List<Tuple>();
+
+            foreach (Tuple tuple in threadPool.TuplesRead)
             {
                 int param = Int32.Parse((string) repInfo.Operator_param[0]);
                 if (t.Index(param).Equals(tuple.Index(param)))
@@ -280,6 +282,7 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Count(Tuple t)
         {
+            tupleProcessed = new List<Tuple>();
             IList<string> countTuple = new List<string>();
 
             countTuple.Add(threadPool.TuplesRead.Count.ToString());
@@ -295,6 +298,8 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Dup(Tuple t)
         {
+            tupleProcessed = new List<Tuple>();
+
             tupleProcessed.Add(t);
             return true;
         }
@@ -324,6 +329,7 @@ namespace Dadstorm
         /// <param name="t">Tuple to be processed.</param>
         public bool Custom(Tuple t)
         {
+            tupleProcessed = new List<Tuple>();
             string path = (string)repInfo.Operator_param[0];
             byte[] code = File.ReadAllBytes(path);
             string className = (string)repInfo.Operator_param[1];
