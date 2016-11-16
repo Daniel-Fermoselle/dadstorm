@@ -50,7 +50,7 @@ namespace Dadstorm
         /// <summary>
         /// Number of threads to be created.
         /// </summary>
-        private const int THREAD_NUMBER = 3;
+        private const int THREAD_NUMBER = 2;
         /// <summary>
         /// Size of the circular buffers.
         /// </summary>
@@ -183,7 +183,7 @@ namespace Dadstorm
 
             foreach(string s in repInfo.Input)
             {
-                if (s.Contains(".data"))
+                if (s.Contains(".dat"))
                 {
                     OpParser parser = new OpParser(s);
                     tupleList = parser.processFile();
@@ -204,7 +204,6 @@ namespace Dadstorm
         /// <param name="x_ms">Operator will stop for x_ms miliseconds.</param>
         public void Interval(string x_ms)
         {
-            this.repStatus = "on interval";
             int interval = Int32.Parse(x_ms);
             this.repInterval = interval;
         }
