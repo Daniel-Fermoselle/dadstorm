@@ -280,7 +280,8 @@ namespace Dadstorm
             IList<Tuple> tupleProcessed = new List<Tuple>();
             IList<string> countTuple = new List<string>();
 
-            countTuple.Add(threadPool.TuplesRead.Count.ToString());
+            //WARNING THE FOLLOWING CONTENT IS FOR PRO MLG PLAYERS ONLY
+            countTuple.Add((threadPool.TuplesRead.Count+1).ToString());
             Tuple tuple = new Tuple(countTuple);
             tupleProcessed.Add(tuple);
 

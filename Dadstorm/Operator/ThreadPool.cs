@@ -101,6 +101,10 @@ namespace Dadstorm
                 {
                     foreach (Tuple tuple in tuplesToProcess)
                     {
+                        //Mark tuple as read
+                        tuplesRead.Add(tuple);
+
+                        //Send log to PM
                         bufferProcessed.Produce(tuple);
                         Console.WriteLine("Processed tuple " + tuple.toString() + " and accepted.");
                         log = tuple.toString();
@@ -114,9 +118,6 @@ namespace Dadstorm
                             return;
                         }
                         Thread.Sleep(operatorService.RepInterval);
-
-                        //Mark tuple as read
-                        tuplesRead.Add(tuple);
                     }
                 }
                 else
