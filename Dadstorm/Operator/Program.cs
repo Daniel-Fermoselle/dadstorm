@@ -253,7 +253,8 @@ namespace Dadstorm
 
             foreach (Tuple tuple in threadPool.TuplesRead)
             {
-                int param = Int32.Parse((string) repInfo.Operator_param[0]);
+                int param = Int32.Parse((string) repInfo.Operator_param[0]) - 1;
+                Console.WriteLine("COMPARING " + t.Index(param) + " ====== " + tuple.Index(param));
                 if (t.Index(param).Equals(tuple.Index(param)))
                 {
                     return null;

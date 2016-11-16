@@ -75,9 +75,6 @@ namespace Dadstorm
         /// <param name="t">Tuple that will be added</param>
         public void AssyncInvoke(Tuple t)
         {
-            //Mark tuple as read
-            tuplesRead.Add(t);
-
             //Add tuple to bufferRead
             bufferRead.Produce(t);
 
@@ -106,7 +103,8 @@ namespace Dadstorm
                         bufferProcessed.Produce(tuple);
                         Console.WriteLine("Processed tuple " + tuple.toString() + " and accepted.");
                         log = tuple.toString();
-                        //operatorService.NotifyPM("<" + log + ">");
+                        operatorService.NotifyPM("<" + log + ">");
+
                         //Checks availability to process a new tuple
                         while (operatorService.RepFreeze) { }
                         if (operatorService.RepCrash)
@@ -114,7 +112,10 @@ namespace Dadstorm
                             Console.WriteLine("HELP ME I AM GOING TO CRASH!! NOOOOO!!");
                             return;
                         }
-                        Thread.Sleep(operatorService.RepInterval);             
+                        Thread.Sleep(operatorService.RepInterval);
+
+                        //Mark tuple as read
+                        tuplesRead.Add(tuple);
                     }
                 }
                 else
