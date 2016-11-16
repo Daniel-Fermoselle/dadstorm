@@ -34,7 +34,8 @@ namespace Dadstorm
 
         public void PrintToOutputBox(string toPrint)
         {
-            textBox1.Text += toPrint + "\r\n";
+            textBox1.AppendText(toPrint + "\r\n");
+
         }
 
         private void label2_Click(object sender, EventArgs e)

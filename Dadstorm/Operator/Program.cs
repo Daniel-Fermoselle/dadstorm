@@ -87,9 +87,15 @@ namespace Dadstorm
         private bool repFreeze = false;
 
         /// <summary>
-        /// Dictionaru with methods to process tuples.
+        /// Dictionar with methods to process tuples.
         /// </summary>
         private Dictionary<string, processTuple> processors;
+
+        /// <summary>
+        /// Delegate to assync call
+        /// </summary>
+        public delegate void AsyncDelegate(string x_ms);
+
 
         /// <summary>
         /// OperatorServices constructor.
@@ -418,7 +424,11 @@ namespace Dadstorm
             if (repInfo.LoggingLvl.Equals("full"))
             {
                 PMServices service = getPMServices();
-                service.SendToLog(msg);
+
+                AsyncDelegate RemoteDel = new AsyncDelegate(service.SendToLog);
+
+                // Call delegate to remote method
+                IAsyncResult RemAr = RemoteDel.BeginInvoke(msg, null, null);
             }
         }
 

@@ -106,7 +106,7 @@ namespace Dadstorm
                         bufferProcessed.Produce(tuple);
                         Console.WriteLine("Processed tuple " + tuple.toString() + " and accepted.");
                         log = tuple.toString();
-                        //operatorService.NotifyPM("<" + log + ">");
+                        operatorService.NotifyPM("<" + log + ">");
                         //Checks availability to process a new tuple
                         while (operatorService.RepFreeze) { }
                         if (operatorService.RepCrash)

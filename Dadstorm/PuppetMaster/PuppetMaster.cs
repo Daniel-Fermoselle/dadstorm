@@ -121,10 +121,6 @@ namespace Dadstorm
 
                 // Call delegate to remote method
                 IAsyncResult RemAr = RemoteDel.BeginInvoke(info,null, null);
-
-                // Wait for the end of the call and then explictly call EndInvoke
-                RemAr.AsyncWaitHandle.WaitOne();
-                RemoteDel.EndInvoke(RemAr);
                 
                 SendToLog("Start " + operator_id);
             }
@@ -145,10 +141,6 @@ namespace Dadstorm
 
                 // Call delegate to remote method
                 IAsyncResult RemAr = RemoteDel.BeginInvoke(x_ms, null, null);
-
-                // Wait for the end of the call and then explictly call EndInvoke
-                RemAr.AsyncWaitHandle.WaitOne();
-                RemoteDel.EndInvoke(RemAr);
 
                 SendToLog("Interval " + operator_id + " " + x_ms);
             }
@@ -171,10 +163,6 @@ namespace Dadstorm
                     // Call delegate to remote method
                     IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
 
-                    // Wait for the end of the call and then explictly call EndInvoke
-                    RemAr.AsyncWaitHandle.WaitOne();
-                    RemoteDel.EndInvoke(RemAr);
-
                     SendToLog("Status");
                 }
             }
@@ -189,10 +177,6 @@ namespace Dadstorm
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
 
-            // Wait for the end of the call and then explictly call EndInvoke
-            RemAr.AsyncWaitHandle.WaitOne();
-            RemoteDel.EndInvoke(RemAr);
-
             SendToLog("Crash " + opx + " " + rep);
         }
 
@@ -205,10 +189,6 @@ namespace Dadstorm
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
 
-            // Wait for the end of the call and then explictly call EndInvoke
-            RemAr.AsyncWaitHandle.WaitOne();
-            RemoteDel.EndInvoke(RemAr);
-
             SendToLog("Freeze " + opx + " " + rep);
         }
 
@@ -220,10 +200,6 @@ namespace Dadstorm
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
-
-            // Wait for the end of the call and then explictly call EndInvoke
-            RemAr.AsyncWaitHandle.WaitOne();
-            RemoteDel.EndInvoke(RemAr);
 
             SendToLog("Unfreeze " + opx + " " + rep);
         }
@@ -248,6 +224,7 @@ namespace Dadstorm
             if(commands == null || !(nextCommand < commands.Count))
             {
                 SendToLog("No commands to run");
+                return;
             }
             String command = (string) commands[nextCommand];
             nextCommand++;
