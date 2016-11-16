@@ -81,7 +81,7 @@ namespace Dadstorm
             //Add tuple to bufferRead
             bufferRead.Produce(t);
 
-            Console.WriteLine("Submitted tuple " + t.toString() + "to buffer of Read Tuples");
+            Console.WriteLine("Submitted tuple " + t.toString() + " to buffer of Read Tuples");
         }
 
         /// <summary>
@@ -93,16 +93,20 @@ namespace Dadstorm
             {
                 //Get tuple from bufferRead
                 Tuple t = bufferRead.Consume();
+                string log;
 
-                Console.WriteLine("Consumed tuple " + t.toString() + "from buffer of Read Tuples");
+                Console.WriteLine("Consumed tuple " + t.toString() + " from buffer of Read Tuples");
 
                 //Processing tuple
-                if (operatorService.processTuple(t))
+                IList<Tuple> tuplesToProcess = operatorService.processTuple(t);
+                if (tuplesToProcess != null)
                 {
-                    foreach (Tuple tuple in operatorService.TupleProcessed)
+                    foreach (Tuple tuple in tuplesToProcess)
                     {
                         bufferProcessed.Produce(tuple);
-                        operatorService.NotifyPM("<" + tuple.toString() + ">");
+                        Console.WriteLine("Processed tuple " + tuple.toString() + " and accepted.");
+                        log = tuple.toString();
+                        //operatorService.NotifyPM("<" + log + ">");
                         //Checks availability to process a new tuple
                         while (operatorService.RepFreeze) { }
                         if (operatorService.RepCrash)
@@ -111,12 +115,11 @@ namespace Dadstorm
                             return;
                         }
                         Thread.Sleep(operatorService.RepInterval);             
-                        Console.WriteLine("Processed tuple " + tuple.toString() + "and accepted.");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Processed tuple " + t.toString() + "and rejected.");
+                    Console.WriteLine("Processed tuple " + t.toString() + " and rejected.");
                 }
 
             }
@@ -132,7 +135,7 @@ namespace Dadstorm
                 //Gets tuple from bufferProcessed
                 Tuple t = bufferProcessed.Consume();
 
-                Console.WriteLine("Consumed tuple " + t.toString() + "from buffer of Processed Tuples");
+                Console.WriteLine("Consumed tuple " + t.toString() + " from buffer of Processed Tuples");
 
                 //Sends tuple to the next Operator
                 operatorService.SendTuple(t);

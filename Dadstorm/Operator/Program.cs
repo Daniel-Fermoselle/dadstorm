@@ -12,7 +12,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 
 namespace Dadstorm
 {
-    delegate bool processTuple(Tuple t);
+    delegate IList<Tuple> processTuple(Tuple t);
 
     public class OperatorServer
     {
@@ -87,11 +87,6 @@ namespace Dadstorm
         private bool repFreeze = false;
 
         /// <summary>
-        /// Bool that signs when the process will crash.
-        /// </summary>
-        private IList<Tuple> tupleProcessed;
-
-        /// <summary>
         /// Dictionaru with methods to process tuples.
         /// </summary>
         private Dictionary<string, processTuple> processors;
@@ -101,7 +96,6 @@ namespace Dadstorm
         /// </summary>
         public OperatorServices()
         {
-            tupleProcessed = new List<Tuple>();
             threadPool = new ThrPool(THREAD_NUMBER, BUFFER_SIZE, this);
             processors = new Dictionary<string, processTuple>();
             processors.Add("UNIQ", Unique);
@@ -162,12 +156,6 @@ namespace Dadstorm
         {
             get { return threadPool; }
             set { threadPool = value; }
-        }
-
-        public IList<Tuple> TupleProcessed
-        {
-            get { return tupleProcessed;}
-            set{ tupleProcessed = value;}
         }
 
         /// <summary>
@@ -247,7 +235,7 @@ namespace Dadstorm
         /// Unique operator processing.
         /// </summary>
         /// <param name="t">Tuple to be processed.</param>
-        public bool processTuple(Tuple t)
+        public IList<Tuple> processTuple(Tuple t)
         {
             processTuple value;
 
@@ -259,77 +247,81 @@ namespace Dadstorm
         /// Unique operator processing.
         /// </summary>
         /// <param name="t">Tuple to be processed.</param>
-        public bool Unique(Tuple t)
+        public IList<Tuple> Unique(Tuple t)
         {
-            tupleProcessed = new List<Tuple>();
+            IList<Tuple> tupleProcessed = new List<Tuple>();
 
             foreach (Tuple tuple in threadPool.TuplesRead)
             {
                 int param = Int32.Parse((string) repInfo.Operator_param[0]);
                 if (t.Index(param).Equals(tuple.Index(param)))
                 {
-                    return false;
+                    return null;
                 }
             }
 
             tupleProcessed.Add(t);
-            return true;
+            return tupleProcessed;
         }
 
         /// <summary>
         /// Count operator processing.
         /// </summary>
         /// <param name="t">Tuple to be processed.</param>
-        public bool Count(Tuple t)
+        public IList<Tuple> Count(Tuple t)
         {
-            tupleProcessed = new List<Tuple>();
+            IList<Tuple> tupleProcessed = new List<Tuple>();
             IList<string> countTuple = new List<string>();
 
             countTuple.Add(threadPool.TuplesRead.Count.ToString());
             Tuple tuple = new Tuple(countTuple);
             tupleProcessed.Add(tuple);
 
-            return true;
+            return tupleProcessed;
         }
 
         /// <summary>
         /// Dup operator processing.
         /// </summary>
         /// <param name="t">Tuple to be processed.</param>
-        public bool Dup(Tuple t)
+        public IList<Tuple> Dup(Tuple t)
         {
-            tupleProcessed = new List<Tuple>();
+            IList<Tuple> tupleProcessed = new List<Tuple>();
 
             tupleProcessed.Add(t);
-            return true;
+            return tupleProcessed;
         }
 
         /// <summary>
         /// Filter operator processing.
         /// </summary>
         /// <param name="t">Tuple to be processed.</param>
-        public bool Filter(Tuple t)
+        public IList<Tuple> Filter(Tuple t)
         {
-            tupleProcessed = new List<Tuple>();
+            IList<Tuple> tupleProcessed = new List<Tuple>();
             string param = (string) repInfo.Operator_param[2];
             string condition = (string) repInfo.Operator_param[1];
             string value = t.Index(Int32.Parse((string) repInfo.Operator_param[0])-1);
             if (condition.Equals("="))
             {
                 tupleProcessed.Add(t);
-                return param.Equals(value);
+                if (param.Equals(value))
+                {
+                    return tupleProcessed;
+                }
+                else { return null; }
             }
             else
-                return false;
+                return null;
         }
 
         /// <summary>
         /// Custom operator processing.
         /// </summary>
         /// <param name="t">Tuple to be processed.</param>
-        public bool Custom(Tuple t)
+        public IList<Tuple> Custom(Tuple t)
         {
-            tupleProcessed = new List<Tuple>();
+            IList<Tuple> tupleProcessed = new List<Tuple>();
             string path = (string)repInfo.Operator_param[0];
             byte[] code = File.ReadAllBytes(path);
             string className = (string)repInfo.Operator_param[1];
@@ -368,11 +360,11 @@ namespace Dadstorm
                                 Console.Write(s + " ,");
                             Console.WriteLine();
                         }
-                        return true;
+                        return tupleProcessed;
                     }
                 }
             }
-            return false;
+            return null;
         }
 
         /// <summary>
