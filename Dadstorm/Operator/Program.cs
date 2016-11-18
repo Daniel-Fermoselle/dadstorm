@@ -13,14 +13,11 @@ using System.Runtime.Remoting.Channels.Tcp;
 namespace Dadstorm
 {
     delegate IList<Tuple> processTuple(Tuple t);
+    delegate string sendTuplePolicy(ArrayList urls);
+
 
     public class OperatorServer
     {
-        //Different names?
-        /// <summary>
-        /// Name of the service that will be published.
-        /// </summary>
-        private const string OPSERVICE_NAME = "op";
 
         static OperatorServices opServices;
 
@@ -31,14 +28,14 @@ namespace Dadstorm
         static void Main(string[] args)
         {
             int port = Int32.Parse(args[0]);
-
+            string opName = args[1];
             //Creating the channel
             TcpChannel serverChannel = new TcpChannel(port);
             ChannelServices.RegisterChannel(serverChannel, false);
 
             // Expose an object form RepServices for remote calls.
             opServices = new OperatorServices();
-            RemotingServices.Marshal(opServices, OPSERVICE_NAME, typeof(OperatorServices));
+            RemotingServices.Marshal(opServices, opName, typeof(OperatorServices));
 
             System.Console.WriteLine("Press <enter> to terminate server...");
             System.Console.ReadLine();
@@ -92,6 +89,11 @@ namespace Dadstorm
         private Dictionary<string, processTuple> processors;
 
         /// <summary>
+        /// Dictionar with sending policies.
+        /// </summary>
+        private Dictionary<string, sendTuplePolicy> policies;
+
+        /// <summary>
         /// Delegate to assync call
         /// </summary>
         public delegate void AsyncDelegate(string x_ms);
@@ -104,11 +106,15 @@ namespace Dadstorm
         {
             threadPool = new ThrPool(THREAD_NUMBER, BUFFER_SIZE, this);
             processors = new Dictionary<string, processTuple>();
+            policies = new Dictionary<string, sendTuplePolicy>();
             processors.Add("UNIQ", Unique);
             processors.Add("COUNT", Count);
             processors.Add("DUP", Dup);
             processors.Add("FILTER", Filter);
             processors.Add("CUSTOM", Custom);
+            policies.Add("primary", Primary);
+            policies.Add("random", CRandom);
+            policies.Add("hashing", Hashing);
         }
 
         /// <summary>
@@ -399,14 +405,13 @@ namespace Dadstorm
                 if(urls.Count >= 1)
                 {
                     last = false;
-                    foreach (string url in urls)
-                    {
-                        //TODO Hashing
-                        //Getting the OperatorServices object 
-                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                        obj.ping("PING!");
-                        obj.AddTupleToBuffer(t);
-                    }
+                    sendTuplePolicy value;
+                    policies.TryGetValue(this.repInfo.Routing, out value);
+
+                    //Getting the OperatorServices object 
+                    OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls));
+                    obj.ping("PING!");
+                    obj.AddTupleToBuffer(t);
                 }
             }
             if (last)
@@ -415,6 +420,37 @@ namespace Dadstorm
                 return;
             }
 
+        }
+
+        /// <summary>
+        /// Returns the primary url of the replica
+        /// </summary>
+        /// <param name="msg">Message sent to PM.</param>
+        private string Primary(ArrayList urls)
+        {
+            //TODO Needs to be refactored when implementing fault tolerancy
+            return (string) urls[0];
+        }
+
+        /// <summary>
+        /// Returns a random url of a replica
+        /// </summary>
+        /// <param name="msg">Message sent to PM.</param>
+        private string CRandom(ArrayList urls)
+        {
+            //TODO be carefull when we start having failed rep
+            Random r = new Random();
+            return (string)urls[r.Next(urls.Count)];
+        }
+
+        /// <summary>
+        /// Returns a url of a replica acording a hashing function
+        /// </summary>
+        /// <param name="msg">Message sent to PM.</param>
+        private string Hashing(ArrayList urls)
+        {
+            //TODO implement properly 
+            return (string)urls[0];
         }
 
         /// <summary>

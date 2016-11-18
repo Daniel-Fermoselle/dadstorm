@@ -76,7 +76,7 @@ namespace Dadstorm
                                                       PCS_PORT + "/" + PCSSERVER_NAME);
                     
                     //Create replica
-                    pcs.createOperator(getPortFromUrl(url));
+                    pcs.createOperator(getPortFromUrl(url), getNameFromUrl(url));
                     
                     //Connection with the operator
                     RepServices rs = getRepServices(url);
@@ -300,6 +300,12 @@ namespace Dadstorm
         {
             string[] splitedUrl = url.Split('/');
             return splitedUrl[2].Split(':')[1];
+        }
+
+        private string getNameFromUrl(string url)
+        {
+            string[] splitedUrl = url.Split('/');
+            return splitedUrl[3];
         }
 
         public Dictionary<string, ArrayList> getUrlsToSend(string OPX)
