@@ -29,7 +29,7 @@ namespace Dadstorm
         private IList<Tuple> tuplesRead;
 
         /// <summary>
-        /// CircularBuffer constructor.
+        /// ThrPool constructor.
         /// </summary>
         /// <param name="thrNum">Number of threads to be created.</param>
         /// <param name="size">Size of the circular buffers.</param>

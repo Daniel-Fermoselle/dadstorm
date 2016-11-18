@@ -72,7 +72,7 @@ namespace Dadstorm
         private string repStatus = "Unitialized";
 
         /// <summary>
-        /// String with the current status of the replica.
+        /// String with the current interval of the replica.
         /// </summary>
         private int repInterval = 0;
 
@@ -82,7 +82,7 @@ namespace Dadstorm
         private bool repCrash = false;
 
         /// <summary>
-        /// Bool that signs when the process will crash.
+        /// Bool that signs when the process will freeze.
         /// </summary>
         private bool repFreeze = false;
 
@@ -238,7 +238,7 @@ namespace Dadstorm
         }
 
         /// <summary>
-        /// Unique operator processing.
+        /// Method to call the right operation on the tuple received.
         /// </summary>
         /// <param name="t">Tuple to be processed.</param>
         public IList<Tuple> processTuple(Tuple t)
