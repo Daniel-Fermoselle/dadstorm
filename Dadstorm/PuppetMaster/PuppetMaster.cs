@@ -142,8 +142,8 @@ namespace Dadstorm
                 // Call delegate to remote method
                 IAsyncResult RemAr = RemoteDel.BeginInvoke(x_ms, null, null);
 
-                SendToLog("Interval " + operator_id + " " + x_ms);
             }
+            SendToLog("Interval " + operator_id + " " + x_ms);
         }
 
         public void Status()
@@ -163,9 +163,9 @@ namespace Dadstorm
                     // Call delegate to remote method
                     IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
 
-                    SendToLog("Status");
                 }
             }
+            SendToLog("Status");
         }
 
         public void Crash(string opx, string rep)
