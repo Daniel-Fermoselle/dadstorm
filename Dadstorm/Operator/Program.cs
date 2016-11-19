@@ -98,7 +98,6 @@ namespace Dadstorm
         /// </summary>
         public delegate void AsyncDelegate(string x_ms);
 
-
         /// <summary>
         /// OperatorServices constructor.
         /// </summary>
@@ -406,7 +405,7 @@ namespace Dadstorm
                 {
                     last = false;
                     sendTuplePolicy value;
-                    policies.TryGetValue(this.repInfo.Routing, out value);
+                    policies.TryGetValue(this.repInfo.Next_routing, out value);
 
                     //Getting the OperatorServices object 
                     OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls));
@@ -450,7 +449,7 @@ namespace Dadstorm
         private string Hashing(ArrayList urls)
         {
             //TODO implement properly 
-            return (string)urls[0];
+            return (string)urls[Int32.Parse(repInfo.Next_routing_param)];
         }
 
         /// <summary>

@@ -109,7 +109,7 @@ namespace Dadstorm
                 repS = (RepServices) array[i];
                 url  = (string) urls[i];
                 string urlOnly = getIPFromUrl(url);
-                RepInfo info = new RepInfo(c.SourceInput, c.Routing, c.Operation,
+                RepInfo info = new RepInfo(c.SourceInput, c.Routing, c.Routing_param, c.Next_routing, c.Next_routing_param, c.Operation,
                                                c.OperationParam, getUrlsToSend(operator_id),
                                                getPortFromUrl(url), loggingLvl,
                                                "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME);
@@ -271,7 +271,7 @@ namespace Dadstorm
                 repServices.TryGetValue(opx, out replicas);
                 for (int i = 0; i < replicas.Count; i++)
                 {
-                    ((RepServices)replicas[i]).Crash();
+                    Crash(opx, i.ToString());
                 }
             }
         }

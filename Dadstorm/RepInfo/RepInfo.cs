@@ -8,6 +8,9 @@ namespace Dadstorm
     public class RepInfo
     {
         private string routing;
+        private string routing_param;
+        private string next_routing;
+        private string next_routing_param;
         private string operator_spec;
         private ArrayList operator_param;
         private Dictionary<string, ArrayList> sendInfoUrls;
@@ -21,12 +24,15 @@ namespace Dadstorm
 
         }
 
-        public RepInfo(ArrayList input, string routing, string operator_spec, ArrayList operator_param, 
+        public RepInfo(ArrayList input, string routing, string routing_param, string next_routing, string next_routing_param, string operator_spec, ArrayList operator_param, 
                        Dictionary<string, ArrayList> sendInfoUrls, string port, string loggingLvl, 
                        string pmsUrl)
         {
             this.input = input;
             this.routing = routing;
+            this.routing_param = routing_param;
+            this.next_routing = next_routing;
+            this.next_routing_param = next_routing_param;
             this.operator_spec = operator_spec;
             this.operator_param = operator_param;
             this.sendInfoUrls = sendInfoUrls;
@@ -39,6 +45,24 @@ namespace Dadstorm
         {
             set { routing = value; }
             get { return routing;  }
+        }
+
+        public string Routing_param
+        {
+            set { routing_param = value; }
+            get { return routing_param; }
+        }
+
+        public string Next_routing
+        {
+            set { next_routing = value; }
+            get { return next_routing; }
+        }
+
+        public string Next_routing_param
+        {
+            set { next_routing_param = value; }
+            get { return next_routing_param; }
         }
 
         public string Operator_spec

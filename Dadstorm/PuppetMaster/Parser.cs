@@ -13,6 +13,8 @@ namespace Dadstorm
         private ArrayList commands;
         private string semantics;
 
+        private ConfigInfo previousConfig;
+
         public void readFile(string path)
         {
             if (!path.Equals(""))
@@ -87,6 +89,13 @@ namespace Dadstorm
             saveRouting(configInfo, splitedLine, ref inline);
             saveAddr(configInfo, splitedLine, ref inline);
             saveOperation(configInfo, splitedLine, ref inline);
+            if(previousConfig != null)
+            {
+                previousConfig.Next_routing = configInfo.Routing;
+                if(configInfo.Routing_param != null)
+                    previousConfig.Next_routing_param = configInfo.Routing_param;
+            }
+            previousConfig = configInfo;
             return configInfo;
         }
 
@@ -125,7 +134,16 @@ namespace Dadstorm
                 throw new InvalidOperationException();
             }
             inline += 1;
-            configInfo.Routing = splitedLine[inline];
+            if (splitedLine[inline].StartsWith("hashing"))
+            {
+                string[] routing = splitedLine[inline].Split('(');
+                configInfo.Routing = routing[0];
+                configInfo.Routing_param = routing[1].Split(')')[0];
+            }
+            else
+            {
+                configInfo.Routing = splitedLine[inline];
+            }
             inline += 1;
         }
 

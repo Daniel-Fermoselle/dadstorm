@@ -12,17 +12,24 @@ namespace Dadstorm
         private ArrayList sourceInput;
         private int repFactor;
         private string routing;
+        private string routing_param;
+        private string next_routing;
+        private string next_routing_param;
         private ArrayList urls;
         private string operation;
         private ArrayList operationParam;
 
-        public ConfigInfo(string operatorId, ArrayList sourceInput, int repFactor, string routing,
+        public ConfigInfo(string operatorId, ArrayList sourceInput, int repFactor, string routing, 
+                          string routing_param, string next_routing, string next_routing_param,
                           ArrayList urls, string operation, ArrayList operationParam)
         {
             this.operatorId = operatorId;
             this.sourceInput = sourceInput;
             this.repFactor = repFactor;
             this.routing = routing;
+            this.next_routing = next_routing;
+            this.next_routing_param = next_routing_param;
+            this.routing_param = routing_param;
             this.urls = urls;
             this.operation = operation;
             this.operationParam = operationParam;
@@ -57,6 +64,24 @@ namespace Dadstorm
         {
             set { routing = value; }
             get { return routing;  }
+        }
+
+        public string Routing_param
+        {
+            set { routing_param = value; }
+            get { return routing_param; }
+        }
+
+        public string Next_routing
+        {
+            set { next_routing = value; }
+            get { return next_routing; }
+        }
+
+        public string Next_routing_param
+        {
+            set { next_routing_param = value; }
+            get { return next_routing_param; }
         }
 
         public ArrayList Urls
