@@ -93,7 +93,7 @@ namespace Dadstorm
                 Tuple t = bufferRead.Consume();
                 string log;
 
-                Console.WriteLine("Consumed tuple " + t.toString() + " from buffer of Read Tuples");
+                if(operatorService.Comments) Console.WriteLine("Consumed tuple " + t.toString() + " from buffer of Read Tuples");
 
                 //Processing tuple
                 IList<Tuple> tuplesToProcess = operatorService.processTuple(t);

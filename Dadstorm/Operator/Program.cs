@@ -48,10 +48,16 @@ namespace Dadstorm
         /// Number of threads to be created.
         /// </summary>
         private const int THREAD_NUMBER = 2;
+
         /// <summary>
         /// Size of the circular buffers.
         /// </summary>
         private const int BUFFER_SIZE = 10;
+
+        /// <summary>
+        /// Comments to debug on/off.
+        /// </summary>
+        private const bool DEBUG_COMMENTS = false;
 
         /// <summary>
         /// Information concerning the Replica.
@@ -84,6 +90,11 @@ namespace Dadstorm
         private bool repFreeze = false;
 
         /// <summary>
+        /// Comments to debug on/off.
+        /// </summary>
+        private bool comments;
+
+        /// <summary>
         /// Dictionar with methods to process tuples.
         /// </summary>
         private Dictionary<string, processTuple> processors;
@@ -103,6 +114,7 @@ namespace Dadstorm
         /// </summary>
         public OperatorServices()
         {
+            this.comments = DEBUG_COMMENTS;
             threadPool = new ThrPool(THREAD_NUMBER, BUFFER_SIZE, this);
             processors = new Dictionary<string, processTuple>();
             policies = new Dictionary<string, sendTuplePolicy>();
@@ -140,7 +152,6 @@ namespace Dadstorm
         public string RepStatus
         {
             get { return repStatus; }
-
             set { repStatus = value; }
         }
 
@@ -150,7 +161,6 @@ namespace Dadstorm
         public bool RepCrash
         {
             get { return repCrash; }
-
             set { repCrash = value; }
         }
 
@@ -163,10 +173,22 @@ namespace Dadstorm
             set { repFreeze = value; }
         }
 
+        /// <summary>
+        /// ThreadPool setter and getter.
+        /// </summary>
         public ThrPool ThreadPool
         {
             get { return threadPool; }
             set { threadPool = value; }
+        }
+
+        /// <summary>
+        /// Comments setter and getter.
+        /// </summary>
+        public bool Comments
+        {
+            get { return comments; }
+            set { comments = value; }
         }
 
         /// <summary>
@@ -265,7 +287,7 @@ namespace Dadstorm
             foreach (Tuple tuple in threadPool.TuplesRead)
             {
                 int param = Int32.Parse((string) repInfo.Operator_param[0]) - 1;
-                Console.WriteLine("COMPARING " + t.Index(param) + " ====== " + tuple.Index(param));
+                if(comments) Console.WriteLine("Comparing " + t.Index(param) + " ===== " + tuple.Index(param));
                 if (t.Index(param).Equals(tuple.Index(param)))
                 {
                     return null;
@@ -364,14 +386,17 @@ namespace Dadstorm
                                ClassObj,
                                args);
                         IList<IList<string>> result = (IList<IList<string>>)resultObject;
-                        Console.WriteLine("Map call result was: ");
+                        if(comments) Console.WriteLine("Map call result was: ");
                         foreach (IList<string> tuple in result)
                         {
                             tupleProcessed.Add(new Tuple(tuple));
-                            Console.Write("tuple: ");
-                            foreach (string s in tuple)
-                                Console.Write(s + " ,");
-                            Console.WriteLine();
+                            if (comments)
+                            {
+                                Console.Write("tuple: ");
+                                foreach (string s in tuple)
+                                    Console.Write(s + " ,");
+                                Console.WriteLine();
+                            }
                         }
                         return tupleProcessed;
                     }
@@ -409,13 +434,13 @@ namespace Dadstorm
 
                     //Getting the OperatorServices object 
                     OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls));
-                    obj.ping("PING!");
+                    if(comments) obj.ping("PING!");
                     obj.AddTupleToBuffer(t);
                 }
             }
             if (last)
             {
-                Console.WriteLine("SOU O ULTIMO");
+                if(comments) Console.WriteLine("SOU O ULTIMO");
                 return;
             }
 
