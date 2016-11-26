@@ -13,7 +13,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 namespace Dadstorm
 {
     delegate IList<Tuple> processTuple(Tuple t);
-    delegate string sendTuplePolicy(ArrayList urls);
+    delegate string sendTuplePolicy(ArrayList urls, Tuple t);//added Tuple t but when not need will receive it not using it
 
 
     public class OperatorServer
@@ -36,6 +36,8 @@ namespace Dadstorm
             // Expose an object form RepServices for remote calls.
             opServices = new OperatorServices();
             RemotingServices.Marshal(opServices, opName, typeof(OperatorServices));
+
+            /*if (comments)*/Console.WriteLine("Eu sou um op e estou no porto " + port);
 
             System.Console.WriteLine("Press <enter> to terminate server...");
             System.Console.ReadLine();
@@ -432,10 +434,23 @@ namespace Dadstorm
                     sendTuplePolicy value;
                     policies.TryGetValue(this.repInfo.Next_routing, out value);
 
-                    //Getting the OperatorServices object 
-                    OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls));
-                    if(comments) obj.ping("PING!");
-                    obj.AddTupleToBuffer(t);
+                    if (value == this.Hashing)
+                    {
+                        /*if (comments)*/
+                        Console.WriteLine("Estou no Hashing");
+                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), Hashing(urls, t));
+                        if (comments) obj.ping("HashPING!");
+                        obj.AddTupleToBuffer(t);
+                    }
+
+                    else
+                    {
+                        //Getting the OperatorServices object 
+                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls, t));//the tuple is sent because of the delegate being equal to every policy
+                        if (comments) obj.ping("PING!");
+                        obj.AddTupleToBuffer(t);
+                    }
+                    
                 }
             }
             if (last)
@@ -450,7 +465,7 @@ namespace Dadstorm
         /// Returns the primary url of the replica
         /// </summary>
         /// <param name="msg">Message sent to PM.</param>
-        private string Primary(ArrayList urls)
+        private string Primary(ArrayList urls, Tuple t)
         {
             //TODO Needs to be refactored when implementing fault tolerancy
             return (string) urls[0];
@@ -460,7 +475,7 @@ namespace Dadstorm
         /// Returns a random url of a replica
         /// </summary>
         /// <param name="msg">Message sent to PM.</param>
-        private string CRandom(ArrayList urls)
+        private string CRandom(ArrayList urls, Tuple t)
         {
             //TODO be carefull when we start having failed rep
             Random r = new Random();
@@ -471,10 +486,33 @@ namespace Dadstorm
         /// Returns a url of a replica acording a hashing function
         /// </summary>
         /// <param name="msg">Message sent to PM.</param>
-        private string Hashing(ArrayList urls)
+        /*private string Hashing(ArrayList urls)
         {
             //TODO implement properly 
             return (string)urls[Int32.Parse(repInfo.Next_routing_param)];
+        }*/
+
+
+        /// <summary>
+        /// Returns a url of a replica acording a hashing function
+        /// </summary>
+        private string Hashing(ArrayList urls, Tuple t)
+        {
+            int field_id = Int32.Parse(repInfo.Next_routing_param);
+
+            return HashFunction(t.Index(field_id),urls);
+        }
+
+        /// <summary>
+        /// Returns a url of a replica acording to length of the string modulus the the size of urls possible
+        /// </summary>
+        public string HashFunction(String s, ArrayList urls)
+        {
+            int index = s.Length % urls.Count;
+
+            /*if (comments)*/ Console.WriteLine("CENAS" + (string)urls[index]);
+
+            return (string)urls[index];
         }
 
         /// <summary>
