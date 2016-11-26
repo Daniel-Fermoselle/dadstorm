@@ -112,7 +112,7 @@ namespace Dadstorm
                 RepInfo info = new RepInfo(c.SourceInput, c.Routing, c.Routing_param, c.Next_routing, c.Next_routing_param, c.Operation,
                                                c.OperationParam, getUrlsToSend(operator_id),
                                                getPortFromUrl(url), loggingLvl,
-                                               "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME);
+                                               "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME,urls,url);
 
 
                 //Asynchronous call without callback

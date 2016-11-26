@@ -18,6 +18,8 @@ namespace Dadstorm
         private string loggingLvl;
         private ArrayList input;
         private string pmsUrl;
+        private ArrayList siblingsUrls;
+        private string myUrl;
 
         public RepInfo()
         {
@@ -26,7 +28,7 @@ namespace Dadstorm
 
         public RepInfo(ArrayList input, string routing, string routing_param, string next_routing, string next_routing_param, string operator_spec, ArrayList operator_param, 
                        Dictionary<string, ArrayList> sendInfoUrls, string port, string loggingLvl, 
-                       string pmsUrl)
+                       string pmsUrl, ArrayList siblingsUrls, string myUrl)
         {
             this.input = input;
             this.routing = routing;
@@ -39,6 +41,8 @@ namespace Dadstorm
             this.port = port;
             this.loggingLvl = loggingLvl;
             this.pmsUrl = pmsUrl;
+            this.siblingsUrls = siblingsUrls;
+            this.myUrl = myUrl;
         }
 
         public string Routing
@@ -109,5 +113,15 @@ namespace Dadstorm
             operator_param.Add(toAdd);
         }
 
+        public ArrayList SiblingsUrls
+        {
+            set { siblingsUrls = value; }
+            get { return siblingsUrls; }
+        }
+        public string MyUrl
+        {
+            set { myUrl = value; }
+            get { return myUrl; }
+        }
     }
 }

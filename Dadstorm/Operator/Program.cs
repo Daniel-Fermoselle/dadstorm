@@ -203,14 +203,42 @@ namespace Dadstorm
             this.repStatus = "Initialized";
             this.repStatus = "starting";
             IList<Tuple> tupleList = new List<Tuple>();
+            IList<Tuple> subTupleList = new List<Tuple>();
 
-            foreach(string s in repInfo.Input)
+            foreach (string s in repInfo.Input)
             {
                 if (s.Contains(".dat"))
                 {
                     OpParser parser = new OpParser(s);
                     tupleList = parser.processFile();
-                    foreach (Tuple t in tupleList)
+                    if (info.SiblingsUrls.Count == 1)
+                    {
+                        //In this case all tuples are read by the replica
+                        subTupleList = tupleList;
+                    }
+                    else
+                    {
+                        //In this case only a part of the tuples are read by the replica
+                        int index = info.SiblingsUrls.IndexOf(info.MyUrl);
+                        int tupleListSize = tupleList.Count;
+                        int parts = tupleListSize / (info.SiblingsUrls.Count);
+                        if (index == info.SiblingsUrls.Count-1)
+                        {
+                            for (int i = index * parts; i < tupleListSize; i++)
+                            {
+                                subTupleList.Add(tupleList.ElementAt(i));
+                            }
+                        }
+                        else
+                        {
+                            for (int i = index * parts; i < (index + 1) * parts; i++)
+                            {
+                                subTupleList.Add(tupleList.ElementAt(i));
+                            }
+                        }
+                    }
+
+                    foreach (Tuple t in subTupleList)
                     {
                         threadPool.AssyncInvoke(t);
                     }
