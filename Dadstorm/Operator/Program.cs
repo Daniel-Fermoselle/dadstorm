@@ -339,15 +339,38 @@ namespace Dadstorm
             string param = (string) repInfo.Operator_param[2];
             string condition = (string) repInfo.Operator_param[1];
             string value = t.Index(Int32.Parse((string) repInfo.Operator_param[0])-1);
+            int condResult = String.Compare(value, param);//returns 0 if value equals param, -1 if value > param , 1 if value < param
             if (condition.Equals("="))
             {
                 tupleProcessed.Add(t);
-                if (param.Equals(value))
+                if (condResult==0)
                 {
                     return tupleProcessed;
                 }
                 else { return null; }
             }
+
+            else if (condition.Equals("<"))
+            {
+                tupleProcessed.Add(t);
+                if (condResult == 1)
+                {
+                    return tupleProcessed;
+                }
+                else { return null; }
+
+            }
+
+            else if (condition.Equals(">"))
+            {
+                tupleProcessed.Add(t);
+                if (condResult == -1)
+                {
+                    return tupleProcessed;
+                }
+                else { return null; }
+            }
+
             else
                 return null;
         }
