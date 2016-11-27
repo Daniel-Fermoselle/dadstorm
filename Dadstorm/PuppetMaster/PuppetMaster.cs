@@ -215,8 +215,10 @@ namespace Dadstorm
                         break;
                     }
                 }
+                newRepInfo = ri;
                 newRepInfo.SendInfoUrls = newSendInfoUrls;
-                repServ.updateRepInfo(newRepInfo);//TODO talvez tenhamos de fazer esta func async
+                RepServices temp = getRepServices(newRepInfo.MyUrl);
+                temp.updateRepInfo(newRepInfo);//TODO talvez tenhamos de fazer esta func async
 
             }
          }
