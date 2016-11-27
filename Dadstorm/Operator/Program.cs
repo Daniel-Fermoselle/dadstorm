@@ -37,7 +37,7 @@ namespace Dadstorm
             opServices = new OperatorServices();
             RemotingServices.Marshal(opServices, opName, typeof(OperatorServices));
 
-            /*if (comments)*/Console.WriteLine("Eu sou um op e estou no porto " + port);
+            Console.WriteLine("Eu sou um op e estou no porto " + port);
 
             System.Console.WriteLine("Press <enter> to terminate server...");
             System.Console.ReadLine();
@@ -97,12 +97,12 @@ namespace Dadstorm
         private bool comments;
 
         /// <summary>
-        /// Dictionar with methods to process tuples.
+        /// Dictionary with methods to process tuples.
         /// </summary>
         private Dictionary<string, processTuple> processors;
 
         /// <summary>
-        /// Dictionar with sending policies.
+        /// Dictionary with sending policies.
         /// </summary>
         private Dictionary<string, sendTuplePolicy> policies;
 
@@ -272,6 +272,7 @@ namespace Dadstorm
         /// </summary>
         public void Crash()
         {
+            //if(RepInfo.Routing.Equals("primary") && RepInfo.SiblingsUrls.Count>1 && RepInfo.SiblingsUrls.IndexOf(RepInfo.MyUrl)==0 )
             this.repCrash = true;
             Environment.Exit(0);
         }
@@ -487,8 +488,7 @@ namespace Dadstorm
 
                     if (value == this.Hashing)
                     {
-                        /*if (comments)*/
-                        Console.WriteLine("Estou no Hashing");
+                        if (comments) Console.WriteLine("Estou no Hashing");
                         OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), Hashing(urls, t));
                         if (comments) obj.ping("HashPING!");
                         obj.AddTupleToBuffer(t);
@@ -539,7 +539,7 @@ namespace Dadstorm
         /// <param name="msg">Message sent to PM.</param>
         /*private string Hashing(ArrayList urls)
         {
-            //TODO implement properly 
+            //TODO implement properly HASHING ANTIGO
             return (string)urls[Int32.Parse(repInfo.Next_routing_param)];
         }*/
 
@@ -561,7 +561,7 @@ namespace Dadstorm
         {
             int index = s.Length % urls.Count;
 
-            /*if (comments)*/ Console.WriteLine("CENAS" + (string)urls[index]);
+            if (comments) Console.WriteLine("CENAS" + (string)urls[index]);
 
             return (string)urls[index];
         }
@@ -586,6 +586,17 @@ namespace Dadstorm
         public void ping(string msg)
         {
             Console.WriteLine(msg);
+        }
+
+        public RepInfo getRepInfoFromRep()
+        {
+            return RepInfo;
+        }
+
+
+        public void updateRepInfo(RepInfo repInfo)
+        {
+            RepInfo = repInfo;
         }
 
         /// <summary>

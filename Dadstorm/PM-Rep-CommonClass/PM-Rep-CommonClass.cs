@@ -1,6 +1,5 @@
-﻿
+﻿using System;
 
-using System;
 
 namespace Dadstorm
 {
@@ -19,6 +18,10 @@ namespace Dadstorm
         void Unfreeze();
 
         void ping(string msg);
+
+        RepInfo getRepInfoFromRep();
+
+        void updateRepInfo(RepInfo repInfo);
     }
 
     public interface PMServices

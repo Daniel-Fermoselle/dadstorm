@@ -26,6 +26,9 @@ namespace Dadstorm
         private Delegate printToForm;
         private Dictionary<string, ConfigInfo> config;
         private Dictionary<string, ArrayList>  repServices;
+
+        private ArrayList repInfos;//All repInfo List
+
         private ArrayList commands;
         private int nextCommand;
         private PuppetMasterServices PMService;
@@ -37,7 +40,9 @@ namespace Dadstorm
             repServices = new Dictionary<string, ArrayList>();
             nextCommand = 0;
             loggingLvl = DEFAULT_LOGGING;
-            
+
+            repInfos = new ArrayList();//All repInfo List
+
             //Set atributes to print to form
             this.form = form;
             this.printToForm = printToForm;
@@ -115,6 +120,8 @@ namespace Dadstorm
                                                "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME,urls,url);
 
 
+                RepInfos.Add(info);
+
                 //Asynchronous call without callback
                 // Create delegate to remote method
                 StartAsyncDelegate RemoteDel = new StartAsyncDelegate(repS.Start);
@@ -169,16 +176,51 @@ namespace Dadstorm
         }
 
         public void Crash(string opx, string rep)
-        {   
+        {
+            RepServices repServ = getReplicaServiceFromProcessname(opx, rep);
+            if (RepInfos != null) {
+                CrashPrimaryReplicas(repServ);
+            }
             //Asynchronous call without callback
             // Create delegate to remote method
-            AsyncDelegate RemoteDel = new AsyncDelegate(getReplicaServiceFromProcessname(opx, rep).Crash);
+            AsyncDelegate RemoteDel = new AsyncDelegate(repServ.Crash);
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
 
             SendToLog("Crash " + opx + " " + rep);
         }
+
+        public void CrashPrimaryReplicas(RepServices repServ)
+        {
+
+            RepInfo repInfo = repServ.getRepInfoFromRep();//TODO talvez tenhamos de fazer esta func async
+            String crashUrl = repInfo.MyUrl;
+            ArrayList urls;
+            ArrayList newUrls = new ArrayList();
+            RepInfo newRepInfo = new RepInfo();
+            Dictionary<string, ArrayList> newSendInfoUrls = new Dictionary<string, ArrayList>();
+            foreach (RepInfo ri in RepInfos)
+            {
+                foreach (string opx in ri.SendInfoUrls.Keys)
+                {
+                    ri.SendInfoUrls.TryGetValue(opx, out urls);
+                    if (urls.Contains(crashUrl))
+                    {
+                        newUrls = urls;
+                        newUrls.Remove(crashUrl);
+                        newSendInfoUrls = ri.SendInfoUrls;
+                        newSendInfoUrls.Remove(opx);
+                        newSendInfoUrls.Add(opx, newUrls);
+                        break;
+                    }
+                }
+                newRepInfo.SendInfoUrls = newSendInfoUrls;
+                repServ.updateRepInfo(newRepInfo);//TODO talvez tenhamos de fazer esta func async
+
+            }
+         }
+        
 
         public void Freeze(string opx, string rep)
         {
@@ -212,7 +254,12 @@ namespace Dadstorm
 
         public void ProcessComands()
         {
-            while(nextCommand < commands.Count)
+            if (commands == null || !(nextCommand < commands.Count))
+            {
+                SendToLog("No commands to run");
+                return;
+            } 
+            while (nextCommand < commands.Count)
             {
                 ProcessSingleCommand();
             }
@@ -356,5 +403,12 @@ namespace Dadstorm
             }
             throw new Exception("Local IP Address Not Found!");
         }
+
+        public ArrayList RepInfos
+        {
+            get { return repInfos; }
+            set { repInfos = value; }
+        }
+
     }
 }
