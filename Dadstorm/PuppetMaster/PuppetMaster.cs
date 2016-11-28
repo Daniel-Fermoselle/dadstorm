@@ -33,6 +33,7 @@ namespace Dadstorm
         private int nextCommand;
         private PuppetMasterServices PMService;
         private string loggingLvl;
+        private string semantics;
 
         public PuppetMaster(Form form, Delegate printToForm)
         {
@@ -63,6 +64,7 @@ namespace Dadstorm
             config = p.processFile();
             commands = p.Commands;
             loggingLvl = p.LoggingLvl;
+            semantics = p.Semantics;
             StartProcesses();
         }
         
