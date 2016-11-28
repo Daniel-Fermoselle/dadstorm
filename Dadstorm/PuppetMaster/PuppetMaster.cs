@@ -187,6 +187,7 @@ namespace Dadstorm
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
+            removeReplicaServiceFromProcessname(opx, rep);
 
             SendToLog("Crash " + opx + " " + rep);
         }
@@ -212,15 +213,22 @@ namespace Dadstorm
                         newSendInfoUrls = ri.SendInfoUrls;
                         newSendInfoUrls.Remove(opx);
                         newSendInfoUrls.Add(opx, newUrls);
-                        break;
+                    }
+                    urls = ri.SiblingsUrls;//reusing urls not to create another temp array CARE WHEN USING IT
+                    if (urls.Contains(crashUrl))
+                    {
+                        newUrls = urls;//reusing newUrls not to create another temp array CARE WHEN USING IT
+                        newUrls.Remove(crashUrl);//reusing newUrls not to create another temp array CARE WHEN USING IT
                     }
                 }
                 newRepInfo = ri;
                 newRepInfo.SendInfoUrls = newSendInfoUrls;
+                newRepInfo.SiblingsUrls = newUrls;
                 RepServices temp = getRepServices(newRepInfo.MyUrl);
                 temp.updateRepInfo(newRepInfo);//TODO talvez tenhamos de fazer esta func async
 
             }
+            RepInfos.Remove(repInfo);
          }
         
 
@@ -386,6 +394,21 @@ namespace Dadstorm
             repServices.TryGetValue(opx, out replicasServices);
             int i = Int32.Parse(rep);
             return (RepServices) replicasServices[i];
+        }
+
+
+        public void removeReplicaServiceFromProcessname(string opx, string rep)
+        {
+            foreach (string op in repServices.Keys)
+            {
+                if (op.Equals(opx))
+                {
+                    ArrayList replicasServices;
+                    repServices.TryGetValue(opx, out replicasServices);
+                    int i = Int32.Parse(rep);
+                    replicasServices.RemoveAt(1);
+                }
+            }
         }
 
         public void SendToLog(string msg)

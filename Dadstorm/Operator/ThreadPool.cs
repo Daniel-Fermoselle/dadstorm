@@ -135,6 +135,7 @@ namespace Dadstorm
         {
             while (true)
             {
+                while (operatorService.RepFreeze) { }
                 //Gets tuple from bufferProcessed
                 Tuple t = bufferProcessed.Consume();
 
