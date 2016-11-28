@@ -119,7 +119,7 @@ namespace Dadstorm
                 RepInfo info = new RepInfo(c.SourceInput, c.Routing, c.Routing_param, c.Next_routing, c.Next_routing_param, c.Operation,
                                                c.OperationParam, getUrlsToSend(operator_id),
                                                getPortFromUrl(url), loggingLvl,
-                                               "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME,urls,url);
+                                               "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME,urls,url,Semantics);
 
 
                 RepInfos.Add(info);
@@ -446,5 +446,10 @@ namespace Dadstorm
             set { repInfos = value; }
         }
 
+        public string Semantics
+        {
+            get { return semantics; }
+            set { semantics = value; }
+        }
     }
 }

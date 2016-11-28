@@ -16,6 +16,10 @@ namespace Dadstorm
         /// </summary>
         private CircularBuffer<Tuple> bufferProcessed;
         /// <summary>
+        /// CircularBuffer with toBeAcked tuples for the at least once semantic and exactly once.
+        /// </summary>
+        private CircularBuffer<Tuple> toBeAcked;
+        /// <summary>
         /// Thread pool.
         /// </summary>
         private Thread[] pool;
@@ -39,6 +43,7 @@ namespace Dadstorm
             //Initialize attributes    
             bufferRead = new CircularBuffer<Tuple>(bufSize);
             bufferProcessed = new CircularBuffer<Tuple>(bufSize);
+            toBeAcked = new CircularBuffer<Tuple>(bufSize);//Maybe have an if cond to let it only be create when the semantics need it
             pool = new Thread[thrNum];
             this.operatorService = operatorService;
             tuplesRead = new List<Tuple>();
@@ -48,6 +53,8 @@ namespace Dadstorm
             pool[i] = new Thread(new ThreadStart(ConsumeRead));
             pool[i++].Start();
             pool[i] = new Thread(new ThreadStart(ConsumeProcessed));
+            pool[i++].Start();
+            pool[i] = new Thread(new ThreadStart(receivedAck));//Thread receiving acks. Maybe have an if cond to let it only be create when the semantics need it
             pool[i++].Start();
         }
 
@@ -143,6 +150,7 @@ namespace Dadstorm
 
                 //Sends tuple to the next Operator
                 operatorService.SendTuple(t);
+                toBeAcked.Produce(t);
 
                 if (operatorService.RepCrash)
                 {
@@ -150,6 +158,16 @@ namespace Dadstorm
                 }
             }
         }
+
+        /*public void receivedAck()
+        {
+            while (true)
+            {
+                while (operatorService.RepFreeze) { }
+                if()
+
+            }
+        }*/
 
     }
 
