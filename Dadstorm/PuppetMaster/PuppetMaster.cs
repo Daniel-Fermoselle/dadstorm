@@ -187,7 +187,7 @@ namespace Dadstorm
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
-            removeReplicaServiceFromProcessname(opx, rep);
+            removeReplicaServiceFromProcessname(opx, rep);//remove crashed replica from the List of RepServices
 
             SendToLog("Crash " + opx + " " + rep);
         }
@@ -198,9 +198,12 @@ namespace Dadstorm
             RepInfo repInfo = repServ.getRepInfoFromRep();//TODO talvez tenhamos de fazer esta func async
             String crashUrl = repInfo.MyUrl;
             ArrayList urls;
+            ArrayList urls2;
             ArrayList newUrls = new ArrayList();
+            ArrayList newUrls2 = new ArrayList();
             RepInfo newRepInfo = new RepInfo();
             Dictionary<string, ArrayList> newSendInfoUrls = new Dictionary<string, ArrayList>();
+            bool haveBreak=false;
             foreach (RepInfo ri in RepInfos)
             {
                 foreach (string opx in ri.SendInfoUrls.Keys)
@@ -213,17 +216,23 @@ namespace Dadstorm
                         newSendInfoUrls = ri.SendInfoUrls;
                         newSendInfoUrls.Remove(opx);
                         newSendInfoUrls.Add(opx, newUrls);
+                        haveBreak=true;
                     }
-                    urls = ri.SiblingsUrls;//reusing urls not to create another temp array CARE WHEN USING IT
-                    if (urls.Contains(crashUrl))
+                    urls2 = ri.SiblingsUrls;//reusing urls not to create another temp array CARE WHEN USING IT
+                    if (urls2.Contains(crashUrl))
                     {
-                        newUrls = urls;//reusing newUrls not to create another temp array CARE WHEN USING IT
-                        newUrls.Remove(crashUrl);//reusing newUrls not to create another temp array CARE WHEN USING IT
+                        newUrls2 = urls2;//reusing newUrls not to create another temp array CARE WHEN USING IT
+                        newUrls2.Remove(crashUrl);//reusing newUrls not to create another temp array CARE WHEN USING IT
+                        haveBreak = true;
+                    }
+                    if (haveBreak)
+                    {
+                        break;
                     }
                 }
                 newRepInfo = ri;
                 newRepInfo.SendInfoUrls = newSendInfoUrls;
-                newRepInfo.SiblingsUrls = newUrls;
+                newRepInfo.SiblingsUrls = newUrls2;
                 RepServices temp = getRepServices(newRepInfo.MyUrl);
                 temp.updateRepInfo(newRepInfo);//TODO talvez tenhamos de fazer esta func async
 
