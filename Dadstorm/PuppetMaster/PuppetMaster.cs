@@ -417,7 +417,7 @@ namespace Dadstorm
                     ArrayList replicasServices;
                     repServices.TryGetValue(opx, out replicasServices);
                     int i = Int32.Parse(rep);
-                    replicasServices.RemoveAt(1);
+                    replicasServices.RemoveAt(i);
                 }
             }
         }

@@ -54,8 +54,8 @@ namespace Dadstorm
             pool[i++].Start();
             pool[i] = new Thread(new ThreadStart(ConsumeProcessed));
             pool[i++].Start();
-            pool[i] = new Thread(new ThreadStart(receivedAck));//Thread receiving acks. Maybe have an if cond to let it only be create when the semantics need it
-            pool[i++].Start();
+            //pool[i] = new Thread(new ThreadStart(receivedAck));//Thread receiving acks. Maybe have an if cond to let it only be create when the semantics need it
+            //pool[i++].Start();
         }
 
         /// <summary>
@@ -113,6 +113,7 @@ namespace Dadstorm
 
                         //Send log to PM
                         bufferProcessed.Produce(tuple);
+                        //Give ack to previous rep
                         Console.WriteLine("Processed tuple " + tuple.toString() + " and accepted.");
                         log = tuple.toString();
                         operatorService.NotifyPM("<" + log + ">");
