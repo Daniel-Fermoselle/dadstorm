@@ -112,17 +112,17 @@ namespace Dadstorm
         /// <summary>
         /// Dictionary with toBeAcked tuples for the at least once semantic and exactly once.
         /// </summary>
-        private IList<AckTuple> toBeAcked;
+        private ArrayList toBeAcked;
 
         /// <summary>
         /// IList with to receive ack from tuples for the at least once semantic and exactly once.
         /// </summary>
-        private IList<Tuple> toReceiveAck;
+        private ArrayList toReceiveAck;
 
         /// <summary>
         /// IList with the timers of resending tuples for the at least once semantic and exactly once.
         /// </summary>
-        private IList<TimerTuple> timerAck;
+        private ArrayList timerAck;
 
         /// <summary>
         /// Timeout of an ack in ms for the at least once semantic and exactly once.
@@ -139,9 +139,9 @@ namespace Dadstorm
             threadPool = new ThrPool(THREAD_NUMBER, BUFFER_SIZE, this);
             processors = new Dictionary<string, processTuple>();
             policies = new Dictionary<string, sendTuplePolicy>();
-            toReceiveAck = new List<Tuple>();
-            toBeAcked = new List<AckTuple>();
-            timerAck = new List<TimerTuple>();
+            toReceiveAck = new ArrayList();
+            toBeAcked = new ArrayList();
+            timerAck = new ArrayList();
             processors.Add("UNIQ", Unique);
             processors.Add("COUNT", Count);
             processors.Add("DUP", Dup);
@@ -218,7 +218,7 @@ namespace Dadstorm
         /// <summary>
         /// ToBeAcked setter and getter.
         /// </summary>
-        public IList<AckTuple> ToBeAcked
+        public ArrayList ToBeAcked
         {
             get { return toBeAcked; }
             set { toBeAcked = value; }
@@ -227,7 +227,7 @@ namespace Dadstorm
         /// <summary>
         /// ToReceiveAck setter and getter.
         /// </summary>
-        public IList<Tuple> ToReceiveAck
+        public ArrayList ToReceiveAck
         {
             get { return toReceiveAck; }
             set { toReceiveAck = value; }
@@ -236,7 +236,7 @@ namespace Dadstorm
         /// <summary>
         /// ToReceiveAck setter and getter.
         /// </summary>
-        public IList<TimerTuple> TimerAck
+        public ArrayList TimerAck
         {
             get { return timerAck; }
             set { timerAck = value; }
@@ -357,7 +357,7 @@ namespace Dadstorm
             if (result != null)
             {
                 //Give ack to previous rep
-                foreach (AckTuple t2 in ToBeAcked)
+                foreach (AckTuple t2 in ToBeAcked.ToArray())
                 {
                     /*Console.WriteLine("======================");
                     Console.WriteLine("t: " + t.toString());
@@ -553,13 +553,29 @@ namespace Dadstorm
         /// <param name="t">Tuple to be sent.</param>
         public void SendTuple(Tuple t)
         {
+            foreach(TimerTuple tt in TimerAck.ToArray())
+            {
+                tt.Time++;
+                if (tt.Time == TIMEOUT)
+                {
+                    tt.Time = 0;
+                    ActuallySendTuple(tt.AckT);
+                }
+            }
+            ActuallySendTuple(t);
+
+        }
+
+        public void ActuallySendTuple(Tuple t)
+        {
             bool last = true;
             ArrayList urls;
 
 
-            foreach (string opx in repInfo.SendInfoUrls.Keys) {
+            foreach (string opx in repInfo.SendInfoUrls.Keys)
+            {
                 repInfo.SendInfoUrls.TryGetValue(opx, out urls);
-                if(urls.Count >= 1)
+                if (urls.Count >= 1)
                 {
                     last = false;
                     sendTuplePolicy value;
@@ -573,7 +589,7 @@ namespace Dadstorm
                         AddTupleToReceiveAck(t);//Save tuple to receive ack
                         obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
                         obj.AddTupleToBuffer(t);
-                        
+
                     }
 
                     else
@@ -584,17 +600,16 @@ namespace Dadstorm
                         AddTupleToReceiveAck(t);//Save tuple to receive ack
                         obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
                         obj.AddTupleToBuffer(t);
-                        
+
                     }
-                    
+
                 }
             }
             if (last)
             {
-                if(comments) Console.WriteLine("SOU O ULTIMO");
+                if (comments) Console.WriteLine("SOU O ULTIMO");
                 return;
             }
-
         }
 
         /// <summary>
@@ -749,13 +764,13 @@ namespace Dadstorm
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
-                foreach(Tuple t2 in ToReceiveAck)
+                foreach(Tuple t2 in ToReceiveAck.ToArray())
                 {
                     if (t.toString().Equals(t2.toString()))
                     {
                         
                         ToReceiveAck.Remove(t);
-                        foreach(TimerTuple t3 in TimerAck)
+                        foreach(TimerTuple t3 in TimerAck.ToArray())
                         {
                             if (t.toString().Equals(t3.AckT.toString()))
                             {
