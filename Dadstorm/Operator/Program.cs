@@ -127,7 +127,7 @@ namespace Dadstorm
         /// <summary>
         /// Timeout of an ack in ms for the at least once semantic and exactly once.
         /// </summary>
-        private const int TIMEOUT = 5000;
+        private const int TIMEOUT = 4;
 
 
         /// <summary>
@@ -558,6 +558,7 @@ namespace Dadstorm
                 tt.Time++;
                 if (tt.Time == TIMEOUT)
                 {
+                    Console.WriteLine("Resending tuple: " + tt.AckT.toString());
                     tt.Time = 0;
                     ActuallySendTuple(tt.AckT);
                 }
