@@ -125,5 +125,11 @@ namespace Dadstorm
             set { myUrl = value; }
             get { return myUrl; }
         }
+
+        public string Semantics
+        {
+            set { semantics = value; }
+            get { return semantics; }
+        }
     }
 }

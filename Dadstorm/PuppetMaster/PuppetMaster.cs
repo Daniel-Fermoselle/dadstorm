@@ -181,7 +181,7 @@ namespace Dadstorm
         {
             RepServices repServ = getReplicaServiceFromProcessname(opx, rep);
             if (RepInfos != null) {
-                CrashPrimaryReplicas(repServ);
+                //CrashPrimaryReplicas(repServ); TODO NEEDS TO BE FIXED TO BE ABLE TO WORK WITH FAULTS MID WORK
             }
             //Asynchronous call without callback
             // Create delegate to remote method

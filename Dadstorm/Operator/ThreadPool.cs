@@ -15,10 +15,17 @@ namespace Dadstorm
         /// CircularBuffer with processed tuples.
         /// </summary>
         private CircularBuffer<Tuple> bufferProcessed;
+
         /// <summary>
-        /// CircularBuffer with toBeAcked tuples for the at least once semantic and exactly once.
+        /// Dictionary with toBeAcked tuples for the at least once semantic and exactly once.
         /// </summary>
-        private CircularBuffer<Tuple> toBeAcked;
+        private IList<AckTuple> toBeAcked;
+
+        /// <summary>
+        /// IList with to receive ack from tuples for the at least once semantic and exactly once.
+        /// </summary>
+        private IList<Tuple> toReceiveAck;
+
         /// <summary>
         /// Thread pool.
         /// </summary>
@@ -43,10 +50,11 @@ namespace Dadstorm
             //Initialize attributes    
             bufferRead = new CircularBuffer<Tuple>(bufSize);
             bufferProcessed = new CircularBuffer<Tuple>(bufSize);
-            toBeAcked = new CircularBuffer<Tuple>(bufSize);//Maybe have an if cond to let it only be create when the semantics need it
             pool = new Thread[thrNum];
             this.operatorService = operatorService;
             tuplesRead = new List<Tuple>();
+            toBeAcked = new List<AckTuple>();
+            toReceiveAck = new List<Tuple>();
 
             //Start threads
             int i = 0;
@@ -54,8 +62,6 @@ namespace Dadstorm
             pool[i++].Start();
             pool[i] = new Thread(new ThreadStart(ConsumeProcessed));
             pool[i++].Start();
-            //pool[i] = new Thread(new ThreadStart(receivedAck));//Thread receiving acks. Maybe have an if cond to let it only be create when the semantics need it
-            //pool[i++].Start();
         }
 
         /// <summary>
@@ -65,6 +71,18 @@ namespace Dadstorm
         {
             get { return tuplesRead; }
             set { tuplesRead = value; }
+        }
+
+        internal IList<AckTuple> ToBeAcked
+        {
+            get { return toBeAcked; }
+            set { toBeAcked = value; }
+        }
+
+        internal IList<Tuple> ToReceiveAck
+        {
+            get { return toReceiveAck; }
+            set { toReceiveAck = value; }
         }
 
         /// <summary>
@@ -84,8 +102,29 @@ namespace Dadstorm
         {
             //Add tuple to bufferRead
             bufferRead.Produce(t);
-
             Console.WriteLine("Submitted tuple " + t.toString() + " to buffer of Read Tuples");
+        }
+
+
+        /// <summary>
+        /// AddTupleToBeAcked inserts tuple in ToBeAcked.
+        /// </summary>
+        /// <param name="t">Tuple that will be acked</param>
+        public void AddTupleToBeAcked(Tuple t, string ackUrl)
+        {
+            AckTuple temp = new AckTuple(t, ackUrl);
+            ToBeAcked.Add(temp);
+            //Console.WriteLine("Tuple to be acked " + t.toString() + " added to the Dictionary");
+        }
+
+        /// <summary>
+        /// AddTupleToReceiveAck inserts tuple in ToReceiveAck.
+        /// </summary>
+        /// <param name="t">Tuple that will receive ack</param>
+        public void AddTupleToReceiveAck(Tuple t)
+        {
+                ToReceiveAck.Add(t);
+            //Console.WriteLine("Tuple to receive ack " + t.toString() + " added to the Dictionary");
         }
 
         /// <summary>
@@ -106,6 +145,22 @@ namespace Dadstorm
                 IList<Tuple> tuplesToProcess = operatorService.processTuple(t);
                 if (tuplesToProcess != null)
                 {
+                    //Give ack to previous rep
+                    foreach(AckTuple t2 in ToBeAcked)
+                    {
+                        /*Console.WriteLine("======================");
+                        Console.WriteLine("t: " + t.toString());
+                        Console.WriteLine("t2: " + t2.toString());
+                        Console.WriteLine("======================");*/
+                        if (t2.AckT.toString().Equals(t.toString()))
+                        {
+                            Console.WriteLine("Entrei: " + t.toString());
+                            operatorService.ackTuple(t, t2.UrlToAck);
+                            this.removeToBeAck(t2);
+                            break;
+                        }
+                    }
+
                     foreach (Tuple tuple in tuplesToProcess)
                     {
                         //Mark tuple as read
@@ -113,7 +168,6 @@ namespace Dadstorm
 
                         //Send log to PM
                         bufferProcessed.Produce(tuple);
-                        //Give ack to previous rep
                         Console.WriteLine("Processed tuple " + tuple.toString() + " and accepted.");
                         log = tuple.toString();
                         operatorService.NotifyPM("<" + log + ">");
@@ -151,7 +205,6 @@ namespace Dadstorm
 
                 //Sends tuple to the next Operator
                 operatorService.SendTuple(t);
-                toBeAcked.Produce(t);
 
                 if (operatorService.RepCrash)
                 {
@@ -160,15 +213,63 @@ namespace Dadstorm
             }
         }
 
-        /*public void receivedAck()
+        public void removeToBeAck(AckTuple t)
         {
-            while (true)
+            Console.WriteLine(t.AckT.toString());
+            if (ToBeAcked.Contains(t))
             {
-                while (operatorService.RepFreeze) { }
-                if()
-
+                ToBeAcked.Remove(t);
             }
-        }*/
+            else
+            {
+                Console.WriteLine("Error while removing tuple after being acked");
+            }
+        }
+        public void receivedAck(Tuple t)
+        {
+            Console.WriteLine(t.toString());
+            if (ToReceiveAck.Contains(t))
+            {
+                ToReceiveAck.Remove(t);
+            }
+            else
+            {
+                Console.WriteLine("Error while removing tuple after being acked");
+            }
+        }
+
+    }
+
+    class AckTuple
+    {
+        /// <summary>
+        /// List with the elements of the Tuple.
+        /// </summary>
+        private Tuple ackT;
+
+        private string urlToAck;
+
+        /// <summary>
+        /// Tuple Contructor.
+        /// </summary>
+        public AckTuple(Tuple ackT, string urlToAck)
+        {
+            this.ackT = ackT;
+            this.urlToAck = urlToAck;
+        }
+
+        public Tuple AckT
+        {
+            get { return ackT; }
+            set { ackT = value; }
+        }
+
+        public string UrlToAck
+        {
+            get { return urlToAck; }
+            set { urlToAck = value; }
+        }
+
 
     }
 

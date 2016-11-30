@@ -240,7 +240,7 @@ namespace Dadstorm
 
                     foreach (Tuple t in subTupleList)
                     {
-                        threadPool.AssyncInvoke(t);
+                        threadPool.AssyncInvoke(t);//Tuples from file dont need to be acked
                     }
                 }
             }
@@ -305,6 +305,17 @@ namespace Dadstorm
 
             processors.TryGetValue(this.repInfo.Operator_spec, out value);
             return value(t);
+        }
+
+        public void ackTuple(Tuple t, String url)//AckTuples if needed
+        {
+            if (!RepInfo.Semantics.Equals("at-most-once"))
+            {
+                Console.WriteLine("ReceivedAck: " + t.toString());
+                OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                obj.threadPool.receivedAck(t);
+            }
+            //ReceiveAck(t, obj);
         }
 
         /// <summary>
@@ -489,9 +500,12 @@ namespace Dadstorm
                     if (value == this.Hashing)
                     {
                         if (comments) Console.WriteLine("Estou no Hashing");
-                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), Hashing(urls, t));
+                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), Hashing(urls, t));//TODO change to value in order to have all
                         if (comments) obj.ping("HashPING!");
+                        AddTupleToReceiveAck(t);//Save tuple to receive ack
+                        obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
                         obj.AddTupleToBuffer(t);
+                        
                     }
 
                     else
@@ -499,7 +513,10 @@ namespace Dadstorm
                         //Getting the OperatorServices object 
                         OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls, t));//the tuple is sent because of the delegate being equal to every policy
                         if (comments) obj.ping("PING!");
+                        AddTupleToReceiveAck(t);//Save tuple to receive ack
+                        obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
                         obj.AddTupleToBuffer(t);
+                        
                     }
                     
                 }
@@ -611,6 +628,34 @@ namespace Dadstorm
         {
             this.threadPool.AssyncInvoke(t);
         }
+
+        public void AddTupleToBeAcked(Tuple t, string myUrl)//Add tuple t to be acked to myUrl
+        {
+            if (!RepInfo.Semantics.Equals("at-most-once"))
+            {
+                Console.WriteLine("TupleToBeAcked: " + t.toString());
+                this.threadPool.AddTupleToBeAcked(t, myUrl);
+            } 
+        }
+
+        public void AddTupleToReceiveAck(Tuple t)//Add tuple to receive ack
+        {
+            if (!RepInfo.Semantics.Equals("at-most-once"))
+            {
+                Console.WriteLine("TupleToReceiveAck: " + t.toString());
+                this.threadPool.AddTupleToReceiveAck(t);
+            } 
+        }
+
+        /*public void ReceiveAck(Tuple t, OperatorServices obj)//Received ack for tuple t
+        {
+            if (!RepInfo.Semantics.Equals("at-most-once"))
+            {
+                Console.WriteLine("ReceivedAck: " + t.toString());
+                //this.threadPool.removeToBeAck(t);
+                obj.threadPool.receivedAck(t);
+            } 
+        }*/
 
     }
 
