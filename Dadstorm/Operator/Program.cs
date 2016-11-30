@@ -110,19 +110,24 @@ namespace Dadstorm
         public delegate void AsyncDelegate(string x_ms);
 
         /// <summary>
-        /// Dictionary with toBeAcked tuples for the at least once semantic and exactly once.
+        /// ArrayList with toBeAcked tuples for the at least once semantic and exactly once.
         /// </summary>
         private ArrayList toBeAcked;
 
         /// <summary>
-        /// IList with to receive ack from tuples for the at least once semantic and exactly once.
+        /// ArrayList with to receive ack from tuples for the at least once semantic and exactly once.
         /// </summary>
         private ArrayList toReceiveAck;
 
         /// <summary>
-        /// IList with the timers of resending tuples for the at least once semantic and exactly once.
+        /// ArrayList with the timers of resending tuples for the at least once semantic and exactly once.
         /// </summary>
         private ArrayList timerAck;
+
+        /// <summary>
+        /// ArrayList of Tuple2TupleProcessed for the exactly once allowing us to know if the tuple was already processed and its result.
+        /// </summary>
+        private ArrayList tupleToTupleProcessed;
 
         /// <summary>
         /// Timeout of an ack in ms for the at least once semantic and exactly once.
@@ -142,6 +147,7 @@ namespace Dadstorm
             toReceiveAck = new ArrayList();
             toBeAcked = new ArrayList();
             timerAck = new ArrayList();
+            tupleToTupleProcessed = new ArrayList();
             processors.Add("UNIQ", Unique);
             processors.Add("COUNT", Count);
             processors.Add("DUP", Dup);
@@ -240,6 +246,15 @@ namespace Dadstorm
         {
             get { return timerAck; }
             set { timerAck = value; }
+        }
+
+        /// <summary>
+        /// ToReceiveAck setter and getter.
+        /// </summary>
+        public ArrayList TupleToTupleProcessed
+        {
+            get { return tupleToTupleProcessed; }
+            set { tupleToTupleProcessed = value; }
         }
 
         /// <summary>
@@ -351,21 +366,40 @@ namespace Dadstorm
         public IList<Tuple> processTuple(Tuple t)
         {
             processTuple value;
+            bool notInList = true;//is it needed to update the TupleToTupleProcessed array 
+            IList<Tuple> result = new List<Tuple>();
+            if (RepInfo.Semantics.Equals("exactly-once"))
+            {
+                foreach (Tuple2TupleProcessed t2t in TupleToTupleProcessed.ToArray())
+                {
+                    if (t.toString().Equals(t2t.Pre.toString()))
+                    {
 
-            processors.TryGetValue(this.repInfo.Operator_spec, out value);
-            IList<Tuple> result = value(t);
+                        result = t2t.Pos;
+                        notInList = false;
+                    }
+                }
+                if (notInList)
+                {
+                    processors.TryGetValue(this.repInfo.Operator_spec, out value);
+                    result = value(t);
+                    Tuple2TupleProcessed temp = new Tuple2TupleProcessed(t, result);
+                    TupleToTupleProcessed.Add(temp);
+                }
+            }
+            else
+            {
+                processors.TryGetValue(this.repInfo.Operator_spec, out value);
+                result = value(t);
+            }
             if (result != null)
             {
                 //Give ack to previous rep
                 foreach (AckTuple t2 in ToBeAcked.ToArray())
                 {
-                    /*Console.WriteLine("======================");
-                    Console.WriteLine("t: " + t.toString());
-                    Console.WriteLine("t2: " + t2.toString());
-                    Console.WriteLine("======================");*/
                     if (t2.AckT.toString().Equals(t.toString()))
                     {
-                        if(Comments)Console.WriteLine("Entrei: " + t.toString());
+                        if(Comments)Console.WriteLine("Vou ser removido das listas porque ja fui processado : " + t.toString());
                         ackTuple(t, t2.UrlToAck);
                         this.removeToBeAck(t2);
                         break;
@@ -553,6 +587,7 @@ namespace Dadstorm
         /// <param name="t">Tuple to be sent.</param>
         public void SendTuple(Tuple t)
         {
+            
             foreach(TimerTuple tt in TimerAck.ToArray())
             {
                 tt.Time++;
@@ -587,6 +622,17 @@ namespace Dadstorm
                         if (comments) Console.WriteLine("Estou no Hashing");
                         OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), Hashing(urls, t));//TODO change to value in order to have all
                         if (comments) obj.ping("HashPING!");
+                        if (RepInfo.Semantics.Equals("exactly-once"))
+                        {
+                            foreach (Tuple2TupleProcessed t2t in obj.TupleToTupleProcessed.ToArray())
+                            {
+                                if (t.toString().Equals(t2t.Pre.toString()))
+                                {
+                                    Console.WriteLine("Tuple already processed by the next rep so not gonna send it again");
+                                    return;
+                                }
+                            }
+                        }
                         AddTupleToReceiveAck(t);//Save tuple to receive ack
                         obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
                         obj.AddTupleToBuffer(t);
@@ -598,6 +644,17 @@ namespace Dadstorm
                         //Getting the OperatorServices object 
                         OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls, t));//the tuple is sent because of the delegate being equal to every policy
                         if (comments) obj.ping("PING!");
+                        if (RepInfo.Semantics.Equals("exactly-once"))
+                        {
+                            foreach (Tuple2TupleProcessed t2t in obj.TupleToTupleProcessed.ToArray())
+                            {
+                                if (t.toString().Equals(t2t.Pre.toString()))
+                                {
+                                    Console.WriteLine("Tuple already processed by the next rep so not gonna send it again");
+                                    return;
+                                }
+                            }
+                        }
                         AddTupleToReceiveAck(t);//Save tuple to receive ack
                         obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
                         obj.AddTupleToBuffer(t);
@@ -900,6 +957,40 @@ namespace Dadstorm
         {
             get { return time; }
             set { time = value; }
+        }
+
+
+    }
+
+    [Serializable]
+    class Tuple2TupleProcessed
+    {
+        /// <summary>
+        /// List with the elements of the Tuple.
+        /// </summary>
+        private Tuple pre;
+
+        private IList<Tuple> pos;
+
+        /// <summary>
+        /// Tuple Contructor.
+        /// </summary>
+        public Tuple2TupleProcessed(Tuple pre, IList<Tuple> pos)
+        {
+            this.pre = pre;
+            this.pos = pos;
+        }
+
+        public Tuple Pre
+        {
+            get { return pre; }
+            set { pre = value; }
+        }
+
+        public IList<Tuple> Pos
+        {
+            get { return pos; }
+            set { pos = value; }
         }
 
 
