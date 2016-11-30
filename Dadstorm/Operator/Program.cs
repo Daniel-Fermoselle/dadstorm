@@ -112,6 +112,16 @@ namespace Dadstorm
         public delegate void AsyncDelegate(string x_ms);
 
         /// <summary>
+        /// Dictionary with toBeAcked tuples for the at least once semantic and exactly once.
+        /// </summary>
+        private IList<AckTuple> toBeAcked;
+
+        /// <summary>
+        /// IList with to receive ack from tuples for the at least once semantic and exactly once.
+        /// </summary>
+        private IList<Tuple> toReceiveAck;
+
+        /// <summary>
         /// OperatorServices constructor.
         /// </summary>
         public OperatorServices()
@@ -120,6 +130,8 @@ namespace Dadstorm
             threadPool = new ThrPool(THREAD_NUMBER, BUFFER_SIZE, this);
             processors = new Dictionary<string, processTuple>();
             policies = new Dictionary<string, sendTuplePolicy>();
+            toReceiveAck = new List<Tuple>();
+            toBeAcked = new List<AckTuple>();
             processors.Add("UNIQ", Unique);
             processors.Add("COUNT", Count);
             processors.Add("DUP", Dup);
@@ -191,6 +203,24 @@ namespace Dadstorm
         {
             get { return comments; }
             set { comments = value; }
+        }
+
+        /// <summary>
+        /// ToBeAcked setter and getter.
+        /// </summary>
+        public IList<AckTuple> ToBeAcked
+        {
+            get { return toBeAcked; }
+            set { toBeAcked = value; }
+        }
+
+        /// <summary>
+        /// ToReceiveAck setter and getter.
+        /// </summary>
+        public IList<Tuple> ToReceiveAck
+        {
+            get { return toReceiveAck; }
+            set { toReceiveAck = value; }
         }
 
         /// <summary>
@@ -304,18 +334,36 @@ namespace Dadstorm
             processTuple value;
 
             processors.TryGetValue(this.repInfo.Operator_spec, out value);
-            return value(t);
+            IList<Tuple> result = value(t);
+            if (result != null)
+            {
+                //Give ack to previous rep
+                foreach (AckTuple t2 in ToBeAcked)
+                {
+                    /*Console.WriteLine("======================");
+                    Console.WriteLine("t: " + t.toString());
+                    Console.WriteLine("t2: " + t2.toString());
+                    Console.WriteLine("======================");*/
+                    if (t2.AckT.toString().Equals(t.toString()))
+                    {
+                        Console.WriteLine("Entrei: " + t.toString());
+                        ackTuple(t, t2.UrlToAck);
+                        this.removeToBeAck(t2);
+                        break;
+                    }
+                }
+            }
+            return result;
         }
 
         public void ackTuple(Tuple t, String url)//AckTuples if needed
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
-                Console.WriteLine("ReceivedAck: " + t.toString());
+                Console.WriteLine("TupleAcked: " + t.toString());
                 OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                obj.threadPool.receivedAck(t);
+                obj.receivedAck(t);
             }
-            //ReceiveAck(t, obj);
         }
 
         /// <summary>
@@ -629,33 +677,70 @@ namespace Dadstorm
             this.threadPool.AssyncInvoke(t);
         }
 
-        public void AddTupleToBeAcked(Tuple t, string myUrl)//Add tuple t to be acked to myUrl
+
+
+
+        /// <summary>
+        /// AddTupleToBeAcked inserts tuple in ToBeAcked.
+        /// </summary>
+        /// <param name="t">Tuple that will be acked</param>
+        public void AddTupleToBeAcked(Tuple t, string ackUrl)//Add tuple t to be acked to myUrl
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
-                Console.WriteLine("TupleToBeAcked: " + t.toString());
-                this.threadPool.AddTupleToBeAcked(t, myUrl);
-            } 
+                AckTuple temp = new AckTuple(t, ackUrl);
+                ToBeAcked.Add(temp);
+                //Console.WriteLine("Tuple to be acked " + t.toString() + " added to the Dictionary");
+            }
         }
 
+        /// <summary>
+        /// AddTupleToReceiveAck inserts tuple in ToReceiveAck.
+        /// </summary>
+        /// <param name="t">Tuple that will receive ack</param>
         public void AddTupleToReceiveAck(Tuple t)//Add tuple to receive ack
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
-                Console.WriteLine("TupleToReceiveAck: " + t.toString());
-                this.threadPool.AddTupleToReceiveAck(t);
-            } 
+                ToReceiveAck.Add(t);
+                //Console.WriteLine("Tuple to receive ack " + t.toString() + " added to the Dictionary");
+            }
         }
 
-        /*public void ReceiveAck(Tuple t, OperatorServices obj)//Received ack for tuple t
+        public void removeToBeAck(AckTuple t)
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
-                Console.WriteLine("ReceivedAck: " + t.toString());
-                //this.threadPool.removeToBeAck(t);
-                obj.threadPool.receivedAck(t);
-            } 
-        }*/
+                Console.WriteLine(t.AckT.toString());
+                if (ToBeAcked.Contains(t))
+                {
+                    Console.WriteLine("removeToBeAck: ENTREI");
+                    ToBeAcked.Remove(t);
+                }
+                else
+                {
+                    Console.WriteLine("removeToBeAck: Error while removing tuple after being acked");
+                }
+            }
+        }
+        public void receivedAck(Tuple t)
+        {
+            if (!RepInfo.Semantics.Equals("at-most-once"))
+            {
+                Console.WriteLine(t.toString());
+                foreach(Tuple t2 in ToReceiveAck)
+                {
+                    if (t.toString().Equals(t2.toString()))
+                    {
+                        Console.WriteLine("receivedAck: ENTREI");
+                        ToReceiveAck.Remove(t);
+                        return;//We only want to remove 1
+                    }
+                }
+                Console.WriteLine("receivedAck: Error while removing tuple after being acked");
+            }
+        }
+        
 
     }
 
@@ -705,5 +790,38 @@ namespace Dadstorm
             }
             return result.Remove(0, 1);
         }
+    }
+
+    class AckTuple
+    {
+        /// <summary>
+        /// List with the elements of the Tuple.
+        /// </summary>
+        private Tuple ackT;
+
+        private string urlToAck;
+
+        /// <summary>
+        /// Tuple Contructor.
+        /// </summary>
+        public AckTuple(Tuple ackT, string urlToAck)
+        {
+            this.ackT = ackT;
+            this.urlToAck = urlToAck;
+        }
+
+        public Tuple AckT
+        {
+            get { return ackT; }
+            set { ackT = value; }
+        }
+
+        public string UrlToAck
+        {
+            get { return urlToAck; }
+            set { urlToAck = value; }
+        }
+
+
     }
 }

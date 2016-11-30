@@ -66,6 +66,7 @@ namespace Dadstorm
             loggingLvl = p.LoggingLvl;
             semantics = p.Semantics;
             StartProcesses();
+            StartRepInfo();
         }
         
         private void StartProcesses()
@@ -100,13 +101,40 @@ namespace Dadstorm
             }
         }
 
+        private void StartRepInfo()
+        {
+            foreach (string operator_id in config.Keys) {
+                ConfigInfo c;
+                config.TryGetValue(operator_id, out c);
+                ArrayList urls = c.Urls;
+                string url;
+                RepServices repS;
+
+                ArrayList array;
+                repServices.TryGetValue(operator_id, out array);
+                for (int i = 0; i < array.Count; i++)
+                {
+                    repS = (RepServices)array[i];
+                    url = (string)urls[i];
+                    string urlOnly = getIPFromUrl(url);
+                    RepInfo info = new RepInfo(c.SourceInput, c.Routing, c.Routing_param, c.Next_routing, c.Next_routing_param, c.Operation,
+                                                   c.OperationParam, getUrlsToSend(operator_id),
+                                                   getPortFromUrl(url), loggingLvl,
+                                                   "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME, urls, url, Semantics);
+                    repS.updateRepInfo(info);
+
+                    RepInfos.Add(info);
+                }
+            }
+        }
+
         public void Start(string operator_id)
         {
             //To initialize op
-            ConfigInfo c;
-            config.TryGetValue(operator_id, out c);
-            ArrayList urls = c.Urls;
-            string url;
+            //ConfigInfo c;
+            //config.TryGetValue(operator_id, out c);
+            //ArrayList urls = c.Urls;
+            //string url;
             RepServices repS;
 
             ArrayList array;
@@ -114,7 +142,8 @@ namespace Dadstorm
             for (int i = 0; i < array.Count; i++)
             {
                 repS = (RepServices) array[i];
-                url  = (string) urls[i];
+                RepInfo info = repS.getRepInfoFromRep();//TODO Assync necessary maybe
+                /*url  = (string) urls[i];
                 string urlOnly = getIPFromUrl(url);
                 RepInfo info = new RepInfo(c.SourceInput, c.Routing, c.Routing_param, c.Next_routing, c.Next_routing_param, c.Operation,
                                                c.OperationParam, getUrlsToSend(operator_id),
@@ -122,7 +151,7 @@ namespace Dadstorm
                                                "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME,urls,url,Semantics);
 
 
-                RepInfos.Add(info);
+                RepInfos.Add(info);*/
 
                 //Asynchronous call without callback
                 // Create delegate to remote method

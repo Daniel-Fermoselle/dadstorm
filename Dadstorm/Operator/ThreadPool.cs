@@ -73,18 +73,6 @@ namespace Dadstorm
             set { tuplesRead = value; }
         }
 
-        internal IList<AckTuple> ToBeAcked
-        {
-            get { return toBeAcked; }
-            set { toBeAcked = value; }
-        }
-
-        internal IList<Tuple> ToReceiveAck
-        {
-            get { return toReceiveAck; }
-            set { toReceiveAck = value; }
-        }
-
         /// <summary>
         /// Pool setter and getter.
         /// </summary>
@@ -104,28 +92,7 @@ namespace Dadstorm
             bufferRead.Produce(t);
             Console.WriteLine("Submitted tuple " + t.toString() + " to buffer of Read Tuples");
         }
-
-
-        /// <summary>
-        /// AddTupleToBeAcked inserts tuple in ToBeAcked.
-        /// </summary>
-        /// <param name="t">Tuple that will be acked</param>
-        public void AddTupleToBeAcked(Tuple t, string ackUrl)
-        {
-            AckTuple temp = new AckTuple(t, ackUrl);
-            ToBeAcked.Add(temp);
-            //Console.WriteLine("Tuple to be acked " + t.toString() + " added to the Dictionary");
-        }
-
-        /// <summary>
-        /// AddTupleToReceiveAck inserts tuple in ToReceiveAck.
-        /// </summary>
-        /// <param name="t">Tuple that will receive ack</param>
-        public void AddTupleToReceiveAck(Tuple t)
-        {
-                ToReceiveAck.Add(t);
-            //Console.WriteLine("Tuple to receive ack " + t.toString() + " added to the Dictionary");
-        }
+     
 
         /// <summary>
         /// ConsumeRead gets tuple from bufferRead and processes it.
@@ -145,22 +112,7 @@ namespace Dadstorm
                 IList<Tuple> tuplesToProcess = operatorService.processTuple(t);
                 if (tuplesToProcess != null)
                 {
-                    //Give ack to previous rep
-                    foreach(AckTuple t2 in ToBeAcked)
-                    {
-                        /*Console.WriteLine("======================");
-                        Console.WriteLine("t: " + t.toString());
-                        Console.WriteLine("t2: " + t2.toString());
-                        Console.WriteLine("======================");*/
-                        if (t2.AckT.toString().Equals(t.toString()))
-                        {
-                            Console.WriteLine("Entrei: " + t.toString());
-                            operatorService.ackTuple(t, t2.UrlToAck);
-                            this.removeToBeAck(t2);
-                            break;
-                        }
-                    }
-
+                    
                     foreach (Tuple tuple in tuplesToProcess)
                     {
                         //Mark tuple as read
@@ -213,63 +165,7 @@ namespace Dadstorm
             }
         }
 
-        public void removeToBeAck(AckTuple t)
-        {
-            Console.WriteLine(t.AckT.toString());
-            if (ToBeAcked.Contains(t))
-            {
-                ToBeAcked.Remove(t);
-            }
-            else
-            {
-                Console.WriteLine("Error while removing tuple after being acked");
-            }
-        }
-        public void receivedAck(Tuple t)
-        {
-            Console.WriteLine(t.toString());
-            if (ToReceiveAck.Contains(t))
-            {
-                ToReceiveAck.Remove(t);
-            }
-            else
-            {
-                Console.WriteLine("Error while removing tuple after being acked");
-            }
-        }
-
-    }
-
-    class AckTuple
-    {
-        /// <summary>
-        /// List with the elements of the Tuple.
-        /// </summary>
-        private Tuple ackT;
-
-        private string urlToAck;
-
-        /// <summary>
-        /// Tuple Contructor.
-        /// </summary>
-        public AckTuple(Tuple ackT, string urlToAck)
-        {
-            this.ackT = ackT;
-            this.urlToAck = urlToAck;
-        }
-
-        public Tuple AckT
-        {
-            get { return ackT; }
-            set { ackT = value; }
-        }
-
-        public string UrlToAck
-        {
-            get { return urlToAck; }
-            set { urlToAck = value; }
-        }
-
+       
 
     }
 
