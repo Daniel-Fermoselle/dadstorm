@@ -374,8 +374,9 @@ namespace Dadstorm
                 {
                     if (t.toString().Equals(t2t.Pre.toString()))
                     {
-
-                        result = t2t.Pos;
+                        Console.WriteLine("Tuple already processed gonna use the previous result: " + t.toString());
+                        //result = t2t.Pos;
+                        result = null;
                         notInList = false;
                     }
                 }
@@ -628,7 +629,7 @@ namespace Dadstorm
                             {
                                 if (t.toString().Equals(t2t.Pre.toString()))
                                 {
-                                    Console.WriteLine("Tuple already processed by the next rep so not gonna send it again");
+                                    Console.WriteLine("Tuple already processed by the next rep so not gonna send it again: " + t.toString());
                                     return;
                                 }
                             }
@@ -650,7 +651,7 @@ namespace Dadstorm
                             {
                                 if (t.toString().Equals(t2t.Pre.toString()))
                                 {
-                                    Console.WriteLine("Tuple already processed by the next rep so not gonna send it again");
+                                    Console.WriteLine("Tuple already processed by the next rep so not gonna send it again: " + t.toString());
                                     return;
                                 }
                             }
