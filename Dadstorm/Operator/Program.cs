@@ -3,12 +3,10 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Timers;
 
 namespace Dadstorm
 {
@@ -122,6 +120,17 @@ namespace Dadstorm
         private IList<Tuple> toReceiveAck;
 
         /// <summary>
+        /// IList with the timers of resending tuples for the at least once semantic and exactly once.
+        /// </summary>
+        private IList<TimerTuple> timerAck;
+
+        /// <summary>
+        /// Timeout of an ack in ms for the at least once semantic and exactly once.
+        /// </summary>
+        private const int TIMEOUT = 5000;
+
+
+        /// <summary>
         /// OperatorServices constructor.
         /// </summary>
         public OperatorServices()
@@ -132,6 +141,7 @@ namespace Dadstorm
             policies = new Dictionary<string, sendTuplePolicy>();
             toReceiveAck = new List<Tuple>();
             toBeAcked = new List<AckTuple>();
+            timerAck = new List<TimerTuple>();
             processors.Add("UNIQ", Unique);
             processors.Add("COUNT", Count);
             processors.Add("DUP", Dup);
@@ -224,6 +234,15 @@ namespace Dadstorm
         }
 
         /// <summary>
+        /// ToReceiveAck setter and getter.
+        /// </summary>
+        public IList<TimerTuple> TimerAck
+        {
+            get { return timerAck; }
+            set { timerAck = value; }
+        }
+
+        /// <summary>
         /// Response to a Start command.
         /// Sending read tuples from files to the buffer.
         /// </summary>
@@ -256,14 +275,14 @@ namespace Dadstorm
                         {
                             for (int i = index * parts; i < tupleListSize; i++)
                             {
-                                subTupleList.Add(tupleList.ElementAt(i));
+                                subTupleList.Add(tupleList[i]);
                             }
                         }
                         else
                         {
                             for (int i = index * parts; i < (index + 1) * parts; i++)
                             {
-                                subTupleList.Add(tupleList.ElementAt(i));
+                                subTupleList.Add(tupleList[i]);
                             }
                         }
                     }
@@ -346,7 +365,7 @@ namespace Dadstorm
                     Console.WriteLine("======================");*/
                     if (t2.AckT.toString().Equals(t.toString()))
                     {
-                        Console.WriteLine("Entrei: " + t.toString());
+                        if(Comments)Console.WriteLine("Entrei: " + t.toString());
                         ackTuple(t, t2.UrlToAck);
                         this.removeToBeAck(t2);
                         break;
@@ -537,6 +556,7 @@ namespace Dadstorm
             bool last = true;
             ArrayList urls;
 
+
             foreach (string opx in repInfo.SendInfoUrls.Keys) {
                 repInfo.SendInfoUrls.TryGetValue(opx, out urls);
                 if(urls.Count >= 1)
@@ -703,41 +723,51 @@ namespace Dadstorm
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
                 ToReceiveAck.Add(t);
+                TimerTuple temp = new TimerTuple(t, 0);
+                TimerAck.Add(temp);
                 //Console.WriteLine("Tuple to receive ack " + t.toString() + " added to the Dictionary");
             }
         }
 
-        public void removeToBeAck(AckTuple t)
+
+        public void removeToBeAck(AckTuple t)//Remove tuple that needed to be sent ack from the list
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
-                Console.WriteLine(t.AckT.toString());
                 if (ToBeAcked.Contains(t))
                 {
-                    Console.WriteLine("removeToBeAck: ENTREI");
+                    Console.WriteLine("removeToBeAck: " + t.AckT.toString());
                     ToBeAcked.Remove(t);
                 }
                 else
                 {
-                    Console.WriteLine("removeToBeAck: Error while removing tuple after being acked");
+                    Console.WriteLine("removeToBeAck: Error while removing tuple after being acked: " + t.AckT.toString());
                 }
             }
         }
-        public void receivedAck(Tuple t)
+        public void receivedAck(Tuple t)//Remove tuple that needed to receive ack from the list
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
-                Console.WriteLine(t.toString());
                 foreach(Tuple t2 in ToReceiveAck)
                 {
                     if (t.toString().Equals(t2.toString()))
                     {
-                        Console.WriteLine("receivedAck: ENTREI");
+                        
                         ToReceiveAck.Remove(t);
+                        foreach(TimerTuple t3 in TimerAck)
+                        {
+                            if (t.toString().Equals(t3.AckT.toString()))
+                            {
+                                TimerAck.Remove(t3);
+                                Console.WriteLine("receivedAck: " + t.toString());
+                                break;
+                            }
+                        }
                         return;//We only want to remove 1
                     }
                 }
-                Console.WriteLine("receivedAck: Error while removing tuple after being acked");
+                Console.WriteLine("receivedAck: Error while removing tuple after being acked: " + t.toString());
             }
         }
         
@@ -820,6 +850,40 @@ namespace Dadstorm
         {
             get { return urlToAck; }
             set { urlToAck = value; }
+        }
+
+
+    }
+
+
+    class TimerTuple
+    {
+        /// <summary>
+        /// List with the elements of the Tuple.
+        /// </summary>
+        private Tuple ackT;
+
+        private int time;
+
+        /// <summary>
+        /// Tuple Contructor.
+        /// </summary>
+        public TimerTuple(Tuple ackT, int time)
+        {
+            this.ackT = ackT;
+            this.time = time;
+        }
+
+        public Tuple AckT
+        {
+            get { return ackT; }
+            set { ackT = value; }
+        }
+
+        public int Time
+        {
+            get { return time; }
+            set { time = value; }
         }
 
 
