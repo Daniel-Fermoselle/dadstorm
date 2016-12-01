@@ -210,7 +210,7 @@ namespace Dadstorm
         {
             RepServices repServ = getReplicaServiceFromProcessname(opx, rep);
             if (RepInfos != null) {
-                //CrashPrimaryReplicas(repServ); //TODO NEEDS TO BE FIXED TO BE ABLE TO WORK WITH FAULTS MID WORK
+                //CrashPrimaryReplicas(repServ,opx,rep); //TODO NEEDS TO BE FIXED TO BE ABLE TO WORK WITH FAULTS MID WORK
             }
             //Asynchronous call without callback
             // Create delegate to remote method
@@ -223,7 +223,7 @@ namespace Dadstorm
             SendToLog("Crash " + opx + " " + rep);
         }
 
-        public void CrashPrimaryReplicas(RepServices repServ)
+        public void CrashPrimaryReplicas(RepServices repServ, string opx, string rep)
         {
 
             RepInfo repInfo = repServ.getRepInfoFromRep();//TODO talvez tenhamos de fazer esta func async
@@ -234,32 +234,27 @@ namespace Dadstorm
             ArrayList newUrls2 = new ArrayList();
             RepInfo newRepInfo = new RepInfo();
             Dictionary<string, ArrayList> newSendInfoUrls = new Dictionary<string, ArrayList>();
-            bool haveBreak=false;
             foreach (RepInfo ri in RepInfos)
             {
-                foreach (string opx in ri.SendInfoUrls.Keys)
+                foreach (string op in ri.SendInfoUrls.Keys)
                 {
-                    ri.SendInfoUrls.TryGetValue(opx, out urls);
+                    ri.SendInfoUrls.TryGetValue(op, out urls);
                     if (urls.Contains(crashUrl))
                     {
                         newUrls = urls;
                         newUrls.Remove(crashUrl);
                         newSendInfoUrls = ri.SendInfoUrls;
-                        newSendInfoUrls.Remove(opx);
-                        newSendInfoUrls.Add(opx, newUrls);
-                        haveBreak=true;
-                    }
-                    urls2 = ri.SiblingsUrls;//reusing urls not to create another temp array CARE WHEN USING IT
-                    if (urls2.Contains(crashUrl))
-                    {
-                        newUrls2 = urls2;//reusing newUrls not to create another temp array CARE WHEN USING IT
-                        newUrls2.Remove(crashUrl);//reusing newUrls not to create another temp array CARE WHEN USING IT
-                        haveBreak = true;
-                    }
-                    if (haveBreak)
-                    {
+                        newSendInfoUrls.Remove(op);
+                        newSendInfoUrls.Add(op, newUrls);
                         break;
                     }
+                }
+                urls2 = ri.SiblingsUrls;//reusing urls not to create another temp array CARE WHEN USING IT
+                if (urls2.Contains(crashUrl))
+                {
+                    newUrls2 = urls2;//reusing newUrls not to create another temp array CARE WHEN USING IT
+                    newUrls2.Remove(crashUrl);//reusing newUrls not to create another temp array CARE WHEN USING IT
+                    
                 }
                 newRepInfo = ri;
                 newRepInfo.SendInfoUrls = newSendInfoUrls;
@@ -269,6 +264,7 @@ namespace Dadstorm
 
             }
             RepInfos.Remove(repInfo);
+            removeReplicaServiceFromProcessname(opx, rep);
          }
         
 

@@ -283,6 +283,12 @@ namespace Dadstorm
                         {
                             tupleList[i].Id = i;
                         }
+
+                        /*foreach(Tuple t in tupleList)DEBUGGING IDS
+                        {
+                            Console.WriteLine("Tuple: " + t.toString() + " Id: " + t.Id);
+                        }*/
+
                         subTupleList = tupleList;
                         //In this case all tuples are read by the replica
                     }
@@ -300,7 +306,7 @@ namespace Dadstorm
                             {
                                 tupleList[i].Id = i;
                                 subTupleList.Add(tupleList[i]);
-                                Console.WriteLine("Tuple: " + tupleList[i].toString() + " Id: " + tupleList[i].Id);
+                                //Console.WriteLine("Tuple: " + tupleList[i].toString() + " Id: " + tupleList[i].Id);DEBUGGING IDS
                             }
                         }
                         else
@@ -309,7 +315,7 @@ namespace Dadstorm
                             {
                                 tupleList[i].Id = i;
                                 subTupleList.Add(tupleList[i]);
-                                Console.WriteLine("Tuple: " + subTupleList[i].toString() + " Id: " + subTupleList[i].Id);
+                                //Console.WriteLine("Tuple: " + subTupleList[i].toString() + " Id: " + subTupleList[i].Id);DEBUGGING IDS
                             }
                         }
                     }
@@ -627,7 +633,7 @@ namespace Dadstorm
                     sendTuplePolicy value;
                     policies.TryGetValue(this.repInfo.Next_routing, out value);
 
-                    if (value == this.Hashing)
+                    /*if (value == this.Hashing)
                     {
                         if (comments) Console.WriteLine("Estou no Hashing");
                         OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), Hashing(urls, t));//TODO change to value in order to have all
@@ -653,7 +659,7 @@ namespace Dadstorm
                     }
 
                     else
-                    {
+                    {*/
                         //Getting the OperatorServices object 
                         OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls, t));//the tuple is sent because of the delegate being equal to every policy
                         if (comments) obj.ping("PING!");
@@ -675,7 +681,7 @@ namespace Dadstorm
                         obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
                         obj.AddTupleToBuffer(t);
 
-                    }
+                    //}
 
                 }
             }
