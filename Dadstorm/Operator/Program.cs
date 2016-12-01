@@ -279,8 +279,12 @@ namespace Dadstorm
                     tupleList = parser.processFile();
                     if (info.SiblingsUrls.Count == 1)
                     {
-                        //In this case all tuples are read by the replica
+                        for (int i = 0; i < subTupleList.Count; i++)
+                        {
+                            tupleList[i].Id = i;
+                        }
                         subTupleList = tupleList;
+                        //In this case all tuples are read by the replica
                     }
                     else
                     {
@@ -290,16 +294,22 @@ namespace Dadstorm
                         int parts = tupleListSize / (info.SiblingsUrls.Count);
                         if (index == info.SiblingsUrls.Count-1)
                         {
+
+                            
                             for (int i = index * parts; i < tupleListSize; i++)
                             {
+                                tupleList[i].Id = i;
                                 subTupleList.Add(tupleList[i]);
+                                Console.WriteLine("Tuple: " + tupleList[i].toString() + " Id: " + tupleList[i].Id);
                             }
                         }
                         else
                         {
                             for (int i = index * parts; i < (index + 1) * parts; i++)
                             {
+                                tupleList[i].Id = i;
                                 subTupleList.Add(tupleList[i]);
+                                Console.WriteLine("Tuple: " + subTupleList[i].toString() + " Id: " + subTupleList[i].Id);
                             }
                         }
                     }
@@ -374,11 +384,11 @@ namespace Dadstorm
             {
                 foreach (Tuple2TupleProcessed t2t in TupleToTupleProcessed.ToArray())
                 {
-                    if (t.toString().Equals(t2t.Pre.toString()))
+                    if (t.Id==t2t.Pre.Id)
                     {
                         Console.WriteLine("Tuple already processed gonna use the previous result: " + t.toString());
                         //result = t2t.Pos;
-                        result = null;
+                        result = null;//TODO change maybe
                         notInList = false;
                     }
                 }
@@ -395,18 +405,15 @@ namespace Dadstorm
                 processors.TryGetValue(this.repInfo.Operator_spec, out value);
                 result = value(t);
             }
-            if (result != null)
+            //Give ack to previous rep
+            foreach (AckTuple t2 in ToBeAcked.ToArray())
             {
-                //Give ack to previous rep
-                foreach (AckTuple t2 in ToBeAcked.ToArray())
+                if (t2.AckT.Id==t.Id)
                 {
-                    if (t2.AckT.toString().Equals(t.toString()))
-                    {
-                        if(Comments)Console.WriteLine("Vou ser removido das listas porque ja fui processado : " + t.toString());
-                        ackTuple(t, t2.UrlToAck);
-                        this.removeToBeAck(t2);
-                        break;
-                    }
+                    if(Comments)Console.WriteLine("Vou ser removido das listas porque ja fui processado : " + t.toString());
+                    ackTuple(t, t2.UrlToAck);
+                    this.removeToBeAck(t2);
+                    break;
                 }
             }
             return result;
@@ -591,13 +598,12 @@ namespace Dadstorm
             foreach (TimerTuple t3 in TimerAck.ToArray())
             {
                 counter++;
-                if (t3.AckT.toString().Equals(t.toString()))
+                if (t3.AckT.Id==t.Id)
                 {
                     Console.WriteLine("Resending tuple: " + t.toString());
-                    SendTuple(t);
+                    SendTuple(t,true);
                 }
             }
-            Console.WriteLine("COUNTER: " + counter);
                 
         }
 
@@ -606,7 +612,7 @@ namespace Dadstorm
         /// Sends tuples to the next Operator in the channel.
         /// </summary>
         /// <param name="t">Tuple to be sent.</param>
-        public void SendTuple(Tuple t)
+        public void SendTuple(Tuple t, bool resend)
         {
             bool last = true;
             ArrayList urls;
@@ -630,14 +636,17 @@ namespace Dadstorm
                         {
                             foreach (Tuple2TupleProcessed t2t in obj.TupleToTupleProcessed.ToArray())
                             {
-                                if (t.toString().Equals(t2t.Pre.toString()))
+                                if (t.Id==t2t.Pre.Id)
                                 {
                                     Console.WriteLine("Tuple already processed by the next rep so not gonna send it again: " + t.toString());
                                     return;
                                 }
                             }
                         }
-                        AddTupleToReceiveAck(t);//Save tuple to receive ack
+                        if (!resend)
+                        {
+                            AddTupleToReceiveAck(t,resend);//Save tuple to receive ack
+                        }
                         obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
                         obj.AddTupleToBuffer(t);
 
@@ -652,14 +661,17 @@ namespace Dadstorm
                         {
                             foreach (Tuple2TupleProcessed t2t in obj.TupleToTupleProcessed.ToArray())
                             {
-                                if (t.toString().Equals(t2t.Pre.toString()))
+                                if (t.Id == t2t.Pre.Id)
                                 {
                                     Console.WriteLine("Tuple already processed by the next rep so not gonna send it again: " + t.toString());
                                     return;
                                 }
                             }
                         }
-                        AddTupleToReceiveAck(t);//Save tuple to receive ack
+                        if (!resend)
+                        {
+                            AddTupleToReceiveAck(t,resend);//Save tuple to receive ack
+                        }
                         obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
                         obj.AddTupleToBuffer(t);
 
@@ -795,17 +807,19 @@ namespace Dadstorm
         /// AddTupleToReceiveAck inserts tuple in ToReceiveAck.
         /// </summary>
         /// <param name="t">Tuple that will receive ack</param>
-        public void AddTupleToReceiveAck(Tuple t)//Add tuple to receive ack
+        public void AddTupleToReceiveAck(Tuple t, bool resend)//Add tuple to receive ack
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
-
-                TimerMethod temptimer = new TimerMethod(ResendTuple);
-                Timer stateTimer = new Timer(temptimer.ResendTupleMethod,
-                                           t, TIMEOUT, TIMEOUT);
-                ToReceiveAck.Add(t);
-                TimerTuple temp = new TimerTuple(t, stateTimer);
-                TimerAck.Add(temp);
+                if (!resend)
+                {
+                    TimerMethod temptimer = new TimerMethod(ResendTuple);
+                    Timer stateTimer = new Timer(temptimer.ResendTupleMethod, t, TIMEOUT, TIMEOUT);
+                    TimerTuple temp = new TimerTuple(t, stateTimer);
+                    TimerAck.Add(temp);
+                    ToReceiveAck.Add(t);
+                }
+                
                 //Console.WriteLine("Tuple to receive ack " + t.toString() + " added to the Dictionary");
             }
         }
@@ -828,17 +842,21 @@ namespace Dadstorm
         }
         public void receivedAck(Tuple t)//Remove tuple that needed to receive ack from the list
         {
+           
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
-                foreach(Tuple t2 in ToReceiveAck.ToArray())
+                foreach (Tuple t2 in ToReceiveAck.ToArray())
                 {
-                    if (t.toString().Equals(t2.toString()))
+                    /*Console.WriteLine("GOING TO LIST");
+                    Console.WriteLine(t2.toString());
+                    Console.WriteLine("FINISHED LISTING");*/
+                    if (t.Id == t2.Id)
                     {
                         
                         ToReceiveAck.Remove(t);
                         foreach(TimerTuple t3 in TimerAck.ToArray())
                         {
-                            if (t.toString().Equals(t3.AckT.toString()))
+                            if (t.Id==t3.AckT.Id)
                             {
                                 t3.Time.Dispose();
                                 TimerAck.Remove(t3);
@@ -846,6 +864,7 @@ namespace Dadstorm
                                 break;
                             }
                         }
+                        //Console.WriteLine("CENAS ID: " + t.toString());
                         return;//We only want to remove 1
                     }
                 }
@@ -867,6 +886,8 @@ namespace Dadstorm
         /// </summary>
         private IList<string> elements;
 
+        private int id;//Only to be used when the semantics is exactly once
+
         /// <summary>
         /// Tuple Contructor.
         /// </summary>
@@ -879,6 +900,12 @@ namespace Dadstorm
         {
             get { return elements; }
             set { elements = value;}
+        }
+
+        public int Id
+        {
+            get { return id; }
+            set { id = value; }
         }
 
         /// <summary>
@@ -1001,6 +1028,7 @@ namespace Dadstorm
             get { return pos; }
             set { pos = value; }
         }
+
     }
 
 

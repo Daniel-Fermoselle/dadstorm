@@ -144,7 +144,7 @@ namespace Dadstorm
                 Console.WriteLine("Consumed tuple " + t.toString() + " from buffer of Processed Tuples");
 
                 //Sends tuple to the next Operator
-                operatorService.SendTuple(t);
+                operatorService.SendTuple(t,false);
 
                 if (operatorService.RepCrash)
                 {
