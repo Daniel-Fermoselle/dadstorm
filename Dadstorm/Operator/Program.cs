@@ -394,7 +394,7 @@ namespace Dadstorm
                     {
                         Console.WriteLine("Tuple already processed gonna use the previous result: " + t.toString());
                         //result = t2t.Pos;
-                        result = null;//TODO change maybe
+                        result = null;//TODO change maybe at the moment if this replica already processed this tuple will reject it if it passed from the previous one
                         notInList = false;
                     }
                 }
