@@ -6,12 +6,13 @@ using System.Reflection;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
-using System.Timers;
+using System.Threading;
 
 namespace Dadstorm
 {
     delegate IList<Tuple> processTuple(Tuple t);
     delegate string sendTuplePolicy(ArrayList urls, Tuple t);//added Tuple t but when not need will receive it not using it
+    delegate void sendTupleDelegate(Tuple t);
 
 
     public class OperatorServer
@@ -40,6 +41,7 @@ namespace Dadstorm
             System.Console.WriteLine("Press <enter> to terminate server...");
             System.Console.ReadLine();
         }
+
     }
 
     internal class OperatorServices : MarshalByRefObject, RepServices
@@ -132,7 +134,7 @@ namespace Dadstorm
         /// <summary>
         /// Timeout of an ack in ms for the at least once semantic and exactly once.
         /// </summary>
-        private const int TIMEOUT = 4;
+        private const int TIMEOUT = 8000;
 
 
         /// <summary>
@@ -582,28 +584,29 @@ namespace Dadstorm
             return obj;
         }
 
+
+        public void ResendTuple(Tuple t)
+        {
+            int counter = 0;
+            foreach (TimerTuple t3 in TimerAck.ToArray())
+            {
+                counter++;
+                if (t3.AckT.toString().Equals(t.toString()))
+                {
+                    Console.WriteLine("Resending tuple: " + t.toString());
+                    SendTuple(t);
+                }
+            }
+            Console.WriteLine("COUNTER: " + counter);
+                
+        }
+
+
         /// <summary>
         /// Sends tuples to the next Operator in the channel.
         /// </summary>
         /// <param name="t">Tuple to be sent.</param>
         public void SendTuple(Tuple t)
-        {
-            
-            foreach(TimerTuple tt in TimerAck.ToArray())
-            {
-                tt.Time++;
-                if (tt.Time == TIMEOUT)
-                {
-                    Console.WriteLine("Resending tuple: " + tt.AckT.toString());
-                    tt.Time = 0;
-                    ActuallySendTuple(tt.AckT);
-                }
-            }
-            ActuallySendTuple(t);
-
-        }
-
-        public void ActuallySendTuple(Tuple t)
         {
             bool last = true;
             ArrayList urls;
@@ -796,8 +799,12 @@ namespace Dadstorm
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
+
+                TimerMethod temptimer = new TimerMethod(ResendTuple);
+                Timer stateTimer = new Timer(temptimer.ResendTupleMethod,
+                                           t, TIMEOUT, TIMEOUT);
                 ToReceiveAck.Add(t);
-                TimerTuple temp = new TimerTuple(t, 0);
+                TimerTuple temp = new TimerTuple(t, stateTimer);
                 TimerAck.Add(temp);
                 //Console.WriteLine("Tuple to receive ack " + t.toString() + " added to the Dictionary");
             }
@@ -833,6 +840,7 @@ namespace Dadstorm
                         {
                             if (t.toString().Equals(t3.AckT.toString()))
                             {
+                                t3.Time.Dispose();
                                 TimerAck.Remove(t3);
                                 Console.WriteLine("receivedAck: " + t.toString());
                                 break;
@@ -937,12 +945,12 @@ namespace Dadstorm
         /// </summary>
         private Tuple ackT;
 
-        private int time;
+        private Timer time;
 
         /// <summary>
         /// Tuple Contructor.
         /// </summary>
-        public TimerTuple(Tuple ackT, int time)
+        public TimerTuple(Tuple ackT, Timer time)
         {
             this.ackT = ackT;
             this.time = time;
@@ -954,7 +962,7 @@ namespace Dadstorm
             set { ackT = value; }
         }
 
-        public int Time
+        public Timer Time
         {
             get { return time; }
             set { time = value; }
@@ -993,7 +1001,26 @@ namespace Dadstorm
             get { return pos; }
             set { pos = value; }
         }
-
-
     }
+
+
+    class TimerMethod
+    {
+
+        private sendTupleDelegate sender;
+
+        public TimerMethod(sendTupleDelegate s)
+        {
+            sender = s;
+        }
+
+
+
+        // This method is called by the timer delegate.
+        public void ResendTupleMethod(Object stateInfo)
+        {
+            sender((Tuple)stateInfo);
+        }
+    }
+
 }

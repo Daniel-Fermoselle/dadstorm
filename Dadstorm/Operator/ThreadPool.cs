@@ -17,16 +17,6 @@ namespace Dadstorm
         private CircularBuffer<Tuple> bufferProcessed;
 
         /// <summary>
-        /// Dictionary with toBeAcked tuples for the at least once semantic and exactly once.
-        /// </summary>
-        private IList<AckTuple> toBeAcked;
-
-        /// <summary>
-        /// IList with to receive ack from tuples for the at least once semantic and exactly once.
-        /// </summary>
-        private IList<Tuple> toReceiveAck;
-
-        /// <summary>
         /// Thread pool.
         /// </summary>
         private Thread[] pool;
@@ -53,8 +43,6 @@ namespace Dadstorm
             pool = new Thread[thrNum];
             this.operatorService = operatorService;
             tuplesRead = new List<Tuple>();
-            toBeAcked = new List<AckTuple>();
-            toReceiveAck = new List<Tuple>();
 
             //Start threads
             int i = 0;

@@ -210,7 +210,7 @@ namespace Dadstorm
         {
             RepServices repServ = getReplicaServiceFromProcessname(opx, rep);
             if (RepInfos != null) {
-                //CrashPrimaryReplicas(repServ); TODO NEEDS TO BE FIXED TO BE ABLE TO WORK WITH FAULTS MID WORK
+                //CrashPrimaryReplicas(repServ); //TODO NEEDS TO BE FIXED TO BE ABLE TO WORK WITH FAULTS MID WORK
             }
             //Asynchronous call without callback
             // Create delegate to remote method
@@ -218,7 +218,7 @@ namespace Dadstorm
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
-            removeReplicaServiceFromProcessname(opx, rep);//remove crashed replica from the List of RepServices
+            //removeReplicaServiceFromProcessname(opx, rep);//remove crashed replica from the List of RepServices
 
             SendToLog("Crash " + opx + " " + rep);
         }
