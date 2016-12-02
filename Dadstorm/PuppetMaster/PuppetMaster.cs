@@ -271,7 +271,7 @@ namespace Dadstorm
             SendToLog("Crash " + opx + " " + rep);
         }
 
-        public void CrashPrimaryReplicas(RepServices repServ, string opx, string rep)
+        public void CrashPrimaryReplicas(RepServices repServ, string opx, string rep)//CHECK FIRST WHAT NEEDS TO BE REMOVED BEFORE CRASH OR NEVERMIND CAUSE ON A NORMAL CRASH IT WOULDN'T HAPPEN
         {
 
             RepInfo repInfo = repServ.getRepInfoFromRep();//TODO talvez tenhamos de fazer esta func async

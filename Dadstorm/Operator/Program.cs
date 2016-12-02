@@ -687,10 +687,8 @@ namespace Dadstorm
 
         public void ResendTuple(Tuple t)
         {
-            int counter = 0;
             foreach (TimerTuple t3 in TimerAck.ToArray())
             {
-                counter++;
                 if (t3.AckT.Id==t.Id)
                 {
                     Console.WriteLine("Resending tuple: " + t.toString());
@@ -733,12 +731,16 @@ namespace Dadstorm
                             }
                         }
                     }
-                    if (!resend)
+                    if (!resend && !RepInfo.Semantics.Equals("at-most-once"))
                     {
                         AddTupleToReceiveAck(t,resend);//Save tuple to receive ack
                     }
-                    obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
+                    if (!RepInfo.Semantics.Equals("at-most-once"))
+                    {
+                        obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
+                    }
                     obj.AddTupleToBuffer(t);
+                    
                 }
             }
             if (last)
