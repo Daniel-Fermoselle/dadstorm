@@ -13,6 +13,7 @@ namespace Dadstorm
     delegate IList<Tuple> processTuple(Tuple t);
     delegate string sendTuplePolicy(ArrayList urls, Tuple t);//added Tuple t but when not need will receive it not using it
     delegate void sendTupleDelegate(Tuple t);
+    delegate void sendAlivesDelegate(OperatorServices ri);
 
 
     public class OperatorServer
@@ -136,6 +137,37 @@ namespace Dadstorm
         /// </summary>
         private const int TIMEOUT = 8000;
 
+        /// <summary>
+        /// Am alive timer to inform my siblings that i am alive
+        /// </summary>
+        private Timer siblingsTimer;
+
+        /// <summary>
+        /// Am alive timer to inform my parents(a.k.a senders) that i am alive
+        /// </summary>
+        private Timer parentsTimer;
+
+        /// <summary>
+        /// Checks the am alives
+        /// </summary>
+        private Timer checkTimer;
+
+        /// <summary>
+        /// Timeout of an am alive in ms.
+        /// </summary>
+        private const int ALIVE_TIMEOUT = 10000;
+
+        /// <summary>
+        /// Dictionary with the url of a children associated with its alive counter
+        /// </summary>
+        private Dictionary<string,int> childrenCount;
+
+        /// <summary>
+        /// Dictionary with the url of a sibling associated with its alive counter
+        /// </summary>
+        private Dictionary<string, int> siblingCount;
+
+
 
         /// <summary>
         /// OperatorServices constructor.
@@ -251,12 +283,67 @@ namespace Dadstorm
         }
 
         /// <summary>
-        /// ToReceiveAck setter and getter.
+        /// TupleToTupleProcessed setter and getter.
         /// </summary>
         public ArrayList TupleToTupleProcessed
         {
             get { return tupleToTupleProcessed; }
             set { tupleToTupleProcessed = value; }
+        }
+
+        /// <summary>
+        /// SiblingsTimer setter and getter.
+        /// </summary>
+        public Timer SiblingsTimer
+        {
+            get { return siblingsTimer; }
+            set { siblingsTimer = value; }
+        }
+
+        /// <summary>
+        /// ParentsTimer setter and getter.
+        /// </summary>
+        public Timer ParentsTimer
+        {
+            get { return parentsTimer; }
+            set { parentsTimer = value; }
+        }
+
+        /// <summary>
+        /// CheckTimer setter and getter.
+        /// </summary>
+        public Timer CheckTimer
+        {
+            get { return checkTimer; }
+            set { checkTimer = value; }
+        }
+
+        /// <summary>
+        /// ChildrenCount setter and getter.
+        /// </summary>
+        public Dictionary<string, int> ChildrenCount
+        {
+            get { return childrenCount; }
+            set { childrenCount = value; }
+        }
+
+        public void incrementChildrenCount(string url)
+        {
+            ChildrenCount[url]++;
+        }
+
+        /// <summary>
+        /// SiblingCount setter and getter.
+        /// </summary>
+        public Dictionary<string, int> SiblingCount
+        {
+            get { return siblingCount; }
+            set { siblingCount = value; }
+        }
+
+        public void incrementSiblingCount(string url)
+        {
+            SiblingCount[url]++;
         }
 
         /// <summary>
@@ -270,7 +357,10 @@ namespace Dadstorm
             this.repStatus = "starting";
             IList<Tuple> tupleList = new List<Tuple>();
             IList<Tuple> subTupleList = new List<Tuple>();
-
+            SiblingsTimer = new Timer(AlivesParents.Method, this, ALIVE_TIMEOUT, ALIVE_TIMEOUT);
+            ParentsTimer = new Timer(AlivesSiblings.Method, this, ALIVE_TIMEOUT, ALIVE_TIMEOUT);
+            CheckTimer = new Timer(CheckTimers.Method, this, ALIVE_TIMEOUT+5000, ALIVE_TIMEOUT+5000);
+            startTimersDictionaries();
             /*Console.WriteLine(repInfo.ReceiveInfoUrls.Count); TODO REMOVE DEBUGGING
 
             foreach(string asd in repInfo.ReceiveInfoUrls)
@@ -336,6 +426,38 @@ namespace Dadstorm
             }
             this.repStatus = "working";
 
+        }
+
+        public void startTimersDictionaries()
+        {
+            ChildrenCount = new Dictionary<string, int>();
+            SiblingCount = new Dictionary<string, int>();
+
+
+            ArrayList allurls = new ArrayList();
+            ArrayList temp;
+            foreach (string opx in repInfo.SendInfoUrls.Keys)
+            {
+                repInfo.SendInfoUrls.TryGetValue(opx, out temp);
+                allurls.AddRange(temp);
+            }
+
+            foreach (string url in allurls)
+            {
+                if (!url.Equals("File"))
+                {
+                    ChildrenCount.Add(url, 0);
+                }
+            }
+
+
+            foreach (string url2 in RepInfo.SiblingsUrls)
+            {
+                if (!url2.Equals(RepInfo.MyUrl))
+                {
+                    SiblingCount.Add(url2, 0);
+                }
+            }
         }
 
         /// <summary>
@@ -640,57 +762,26 @@ namespace Dadstorm
                     last = false;
                     sendTuplePolicy value;
                     policies.TryGetValue(this.repInfo.Next_routing, out value);
-
-                    /*if (value == this.Hashing)
+                    //Getting the OperatorServices object 
+                    OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls, t));//the tuple is sent because of the delegate being equal to every policy
+                    if (comments) obj.ping("PING!");
+                    if (RepInfo.Semantics.Equals("exactly-once"))
                     {
-                        if (comments) Console.WriteLine("Estou no Hashing");
-                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), Hashing(urls, t));//TODO change to value in order to have all
-                        if (comments) obj.ping("HashPING!");
-                        if (RepInfo.Semantics.Equals("exactly-once"))
+                        foreach (Tuple2TupleProcessed t2t in obj.TupleToTupleProcessed.ToArray())
                         {
-                            foreach (Tuple2TupleProcessed t2t in obj.TupleToTupleProcessed.ToArray())
+                            if (t.Id == t2t.Pre.Id)
                             {
-                                if (t.Id==t2t.Pre.Id)
-                                {
-                                    Console.WriteLine("Tuple already processed by the next rep so not gonna send it again: " + t.toString());
-                                    return;
-                                }
+                                Console.WriteLine("Tuple already processed by the next rep so not gonna send it again: " + t.toString());
+                                return;
                             }
                         }
-                        if (!resend)
-                        {
-                            AddTupleToReceiveAck(t,resend);//Save tuple to receive ack
-                        }
-                        obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
-                        obj.AddTupleToBuffer(t);
-
                     }
-
-                    else
-                    {*/
-                        //Getting the OperatorServices object 
-                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls, t));//the tuple is sent because of the delegate being equal to every policy
-                        if (comments) obj.ping("PING!");
-                        if (RepInfo.Semantics.Equals("exactly-once"))
-                        {
-                            foreach (Tuple2TupleProcessed t2t in obj.TupleToTupleProcessed.ToArray())
-                            {
-                                if (t.Id == t2t.Pre.Id)
-                                {
-                                    Console.WriteLine("Tuple already processed by the next rep so not gonna send it again: " + t.toString());
-                                    return;
-                                }
-                            }
-                        }
-                        if (!resend)
-                        {
-                            AddTupleToReceiveAck(t,resend);//Save tuple to receive ack
-                        }
-                        obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
-                        obj.AddTupleToBuffer(t);
-
-                    //}
-
+                    if (!resend)
+                    {
+                        AddTupleToReceiveAck(t,resend);//Save tuple to receive ack
+                    }
+                    obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
+                    obj.AddTupleToBuffer(t);
                 }
             }
             if (last)
@@ -885,9 +976,9 @@ namespace Dadstorm
                 Console.WriteLine("receivedAck: Error while removing tuple after being acked: " + t.toString());
             }
         }
-        
 
     }
+
 
     /// <summary>
     /// Tuple is collections of elements.
@@ -1064,5 +1155,89 @@ namespace Dadstorm
             sender((Tuple)stateInfo);
         }
     }
+    
+    class AlivesParents
+    {
+        public AlivesParents() { }
+
+        public static void sendAliveParents(OperatorServices me)
+        {
+            if (!(me.RepFreeze && me.RepCrash))
+            {
+                foreach (string url in me.ChildrenCount.Keys)
+                {
+                    Console.WriteLine("ENTREI: " + me.RepInfo.MyUrl);
+                    Console.WriteLine("Count: " + me.RepInfo.ReceiveInfoUrls.Count);
+                    OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                    obj.incrementChildrenCount(me.RepInfo.MyUrl);
+                }
+            }
+
+        }
+
+        // This method is called by the timer delegate.
+        public static void Method(Object stateInfo)
+        {
+            sendAliveParents((OperatorServices)stateInfo);
+        }
+    }
+
+    class AlivesSiblings
+    {
+        public AlivesSiblings() { }
+
+        public static void sendAliveSiblings(OperatorServices me)
+        {
+            if (!(me.RepFreeze && me.RepCrash))
+            {
+                foreach(string url in me.SiblingCount.Keys)
+                {
+                    Console.WriteLine("ENTREI: " + me.RepInfo.MyUrl);
+                    Console.WriteLine("Sibling: " + url);
+                    OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                    obj.incrementSiblingCount(me.RepInfo.MyUrl);
+                }
+            }
+        }
+
+        // This method is called by the timer delegate.
+        public static void Method(Object stateInfo)
+        {
+            sendAliveSiblings((OperatorServices)stateInfo);
+        }
+    }
+
+
+    class CheckTimers
+    {
+        public CheckTimers() { }
+
+        public static void checker(OperatorServices me)
+        {
+            if (!(me.RepFreeze && me.RepCrash))
+            {
+                Console.WriteLine("CHECKING SIBLINGS");
+                foreach (string url in me.SiblingCount.Keys)
+                {
+                    Console.WriteLine("urls: " + url + " counter: " + me.SiblingCount[url]);
+                }
+                Console.WriteLine("FINISHED SIBLINGS");
+
+                Console.WriteLine("CHECKING CHILDREN");
+                foreach (string url2 in me.ChildrenCount.Keys)
+                {
+                    Console.WriteLine("urls: " + url2 + " counter: " + me.ChildrenCount[url2]);
+                }
+                Console.WriteLine("FINISHED CHILDREN");
+            }
+        }
+
+        // This method is called by the timer delegate.
+        public static void Method(Object stateInfo)
+        {
+            checker((OperatorServices)stateInfo);
+        }
+    }
+
 
 }
