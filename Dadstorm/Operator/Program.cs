@@ -271,6 +271,13 @@ namespace Dadstorm
             IList<Tuple> tupleList = new List<Tuple>();
             IList<Tuple> subTupleList = new List<Tuple>();
 
+            /*Console.WriteLine(repInfo.ReceiveInfoUrls.Count); TODO REMOVE DEBUGGING
+
+            foreach(string asd in repInfo.ReceiveInfoUrls)
+            {
+                Console.WriteLine(asd);
+            }*/
+
             foreach (string s in repInfo.Input)
             {
                 if (s.Contains(".dat"))
@@ -284,12 +291,13 @@ namespace Dadstorm
                             tupleList[i].Id = i;
                         }
 
-                        /*foreach(Tuple t in tupleList)DEBUGGING IDS
+                        /*foreach(Tuple t in tupleList)DEBUGGING IDS TODO REMOVE DEBUGGING
                         {
                             Console.WriteLine("Tuple: " + t.toString() + " Id: " + t.Id);
                         }*/
 
                         subTupleList = tupleList;
+
                         //In this case all tuples are read by the replica
                     }
                     else
@@ -306,7 +314,7 @@ namespace Dadstorm
                             {
                                 tupleList[i].Id = i;
                                 subTupleList.Add(tupleList[i]);
-                                //Console.WriteLine("Tuple: " + tupleList[i].toString() + " Id: " + tupleList[i].Id);DEBUGGING IDS
+                                //Console.WriteLine("Tuple: " + tupleList[i].toString() + " Id: " + tupleList[i].Id);DEBUGGING IDS TODO REMOVE DEBUGGING
                             }
                         }
                         else
@@ -315,7 +323,7 @@ namespace Dadstorm
                             {
                                 tupleList[i].Id = i;
                                 subTupleList.Add(tupleList[i]);
-                                //Console.WriteLine("Tuple: " + subTupleList[i].toString() + " Id: " + subTupleList[i].Id);DEBUGGING IDS
+                                //Console.WriteLine("Tuple: " + subTupleList[i].toString() + " Id: " + subTupleList[i].Id);DEBUGGING IDS TODO REMOVE DEBUGGING
                             }
                         }
                     }

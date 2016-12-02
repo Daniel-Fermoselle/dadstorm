@@ -21,6 +21,8 @@ namespace Dadstorm
         private ArrayList siblingsUrls;
         private string myUrl;
         private string semantics;
+        private ArrayList receiveInfoUrls;
+        private string operatorId;
 
         public RepInfo()
         {
@@ -29,7 +31,7 @@ namespace Dadstorm
 
         public RepInfo(ArrayList input, string routing, string routing_param, string next_routing, string next_routing_param, string operator_spec, ArrayList operator_param, 
                        Dictionary<string, ArrayList> sendInfoUrls, string port, string loggingLvl, 
-                       string pmsUrl, ArrayList siblingsUrls, string myUrl, string semantics)
+                       string pmsUrl, ArrayList siblingsUrls, string myUrl, string semantics, string operatorId)
         {
             this.input = input;
             this.routing = routing;
@@ -45,6 +47,7 @@ namespace Dadstorm
             this.siblingsUrls = siblingsUrls;
             this.myUrl = myUrl;
             this.semantics = semantics;
+            this.operatorId = operatorId;
         }
 
         public string Routing
@@ -131,5 +134,17 @@ namespace Dadstorm
             set { semantics = value; }
             get { return semantics; }
         }
+
+        public ArrayList ReceiveInfoUrls
+        {
+            set { receiveInfoUrls = value; }
+            get { return receiveInfoUrls; }
+        }
+
+        public string OperatorId
+        {
+            set { operatorId = value; }
+            get { return operatorId; }
+        }  
     }
 }

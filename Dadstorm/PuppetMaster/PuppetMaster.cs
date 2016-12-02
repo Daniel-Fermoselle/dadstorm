@@ -67,6 +67,7 @@ namespace Dadstorm
             semantics = p.Semantics;
             StartProcesses();
             StartRepInfo();
+            GetUrlsFrom();
         }
         
         private void StartProcesses()
@@ -120,7 +121,7 @@ namespace Dadstorm
                     RepInfo info = new RepInfo(c.SourceInput, c.Routing, c.Routing_param, c.Next_routing, c.Next_routing_param, c.Operation,
                                                    c.OperationParam, getUrlsToSend(operator_id),
                                                    getPortFromUrl(url), loggingLvl,
-                                                   "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME, urls, url, Semantics);
+                                                   "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME, urls, url, Semantics, operator_id);
                     repS.updateRepInfo(info);
 
                     RepInfos.Add(info);
@@ -128,34 +129,81 @@ namespace Dadstorm
             }
         }
 
-        public void Start(string operator_id)
+        private void GetUrlsFrom()
         {
-            //To initialize op
-            //ConfigInfo c;
-            //config.TryGetValue(operator_id, out c);
-            //ArrayList urls = c.Urls;
-            //string url;
-            RepServices repS;
-
-            ArrayList array;
-            repServices.TryGetValue(operator_id, out array);
-            for (int i = 0; i < array.Count; i++)
+            foreach (string operator_id in config.Keys)
             {
-                repS = (RepServices) array[i];
-                RepInfo info = repS.getRepInfoFromRep();//TODO Assync necessary maybe
-                /*url  = (string) urls[i];
-                string urlOnly = getIPFromUrl(url);
-                RepInfo info = new RepInfo(c.SourceInput, c.Routing, c.Routing_param, c.Next_routing, c.Next_routing_param, c.Operation,
-                                               c.OperationParam, getUrlsToSend(operator_id),
-                                               getPortFromUrl(url), loggingLvl,
-                                               "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME,urls,url,Semantics);
+                ArrayList array;
+                repServices.TryGetValue(operator_id, out array);
+                for (int i = 0; i < array.Count; i++)
+                {
+                    RepServices repS = (RepServices)array[i];
+                    RepInfo ri = repS.getRepInfoFromRep();
+                    ArrayList getFrom = getFromUrls(ri.OperatorId);
+                    ri.ReceiveInfoUrls = getFrom;
+                    repS.updateRepInfo(ri);
+
+                    /*Console.WriteLine("Inicio: " + ri.MyUrl); TODO REMOVE DEBUGGING
+                    foreach (string s in getFrom)
+                    {
+                        Console.WriteLine(s);
+                    }
+                    Console.WriteLine("Fim: " + ri.MyUrl);*/
+                }
+            }
+            
+            RepInfos.Clear();
+            foreach (string operator_id in config.Keys)
+            {
+                ArrayList array;
+                repServices.TryGetValue(operator_id, out array);
+                for (int i = 0; i < array.Count; i++)
+                {
+                    RepServices repS = (RepServices)array[i];
+                    RepInfo ri = repS.getRepInfoFromRep();
+                    RepInfos.Add(ri);
+                }
+            }
+            /*foreach (RepInfo ri in RepInfos) TODO REMOVE DEBUGGING
+            {
+                Console.WriteLine("Inicio: " + ri.MyUrl);
+                foreach (string s in ri.ReceiveInfoUrls)
+                {
+                    Console.WriteLine(s);
+                }
+                Console.WriteLine("Fim: " + ri.MyUrl);
+            }*/
+
+        }     
+
+       public void Start(string operator_id)
+       {
+           //To initialize op
+           //ConfigInfo c;
+           //config.TryGetValue(operator_id, out c);
+           //ArrayList urls = c.Urls;
+           //string url;
+           RepServices repS;
+
+           ArrayList array;
+           repServices.TryGetValue(operator_id, out array);
+           for (int i = 0; i < array.Count; i++)
+           {
+               repS = (RepServices) array[i];
+               RepInfo info = repS.getRepInfoFromRep();//TODO Assync necessary maybe
+               /*url  = (string) urls[i];
+               string urlOnly = getIPFromUrl(url);
+               RepInfo info = new RepInfo(c.SourceInput, c.Routing, c.Routing_param, c.Next_routing, c.Next_routing_param, c.Operation,
+                                              c.OperationParam, getUrlsToSend(operator_id),
+                                              getPortFromUrl(url), loggingLvl,
+                                              "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME,urls,url,Semantics);
 
 
-                RepInfos.Add(info);*/
+               RepInfos.Add(info);*/
 
-                //Asynchronous call without callback
-                // Create delegate to remote method
-                StartAsyncDelegate RemoteDel = new StartAsyncDelegate(repS.Start);
+            //Asynchronous call without callback
+            // Create delegate to remote method
+            StartAsyncDelegate RemoteDel = new StartAsyncDelegate(repS.Start);
 
                 // Call delegate to remote method
                 IAsyncResult RemAr = RemoteDel.BeginInvoke(info,null, null);
@@ -422,6 +470,30 @@ namespace Dadstorm
                 subDic.Add(OPX2, outputs);
             }
             return subDic;
+        }
+
+        public ArrayList getFromUrls(string opId)
+        {
+            ArrayList urls = new ArrayList();
+            ConfigInfo c;
+            config.TryGetValue(opId, out c);
+            foreach (string source in c.SourceInput)//Em principio so havera uma source TODO remover quando esclarecido
+            {
+                if (source.Contains(".dat"))
+                {
+                    //return null;//because the input is a file
+                    urls.Add("File");
+                    break;
+                }
+                foreach(RepInfo ri in RepInfos)
+                {
+                    if (ri.OperatorId.Equals(source))
+                    {
+                        urls.Add(ri.MyUrl);
+                    }
+                }
+            }
+            return urls;
         }
 
         private RepServices getReplicaServiceFromProcessname(string opx, string rep)
