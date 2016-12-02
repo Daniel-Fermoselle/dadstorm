@@ -160,12 +160,8 @@ namespace Dadstorm
         /// <summary>
         /// Dictionary with the url of a children associated with its alive counter
         /// </summary>
-        private Dictionary<string,int> childrenCount;
-
-        /// <summary>
-        /// Dictionary with the url of a sibling associated with its alive counter
-        /// </summary>
-        private Dictionary<string, int> siblingCount;
+        private ArrayList childrenCount;
+        
 
 
 
@@ -321,30 +317,12 @@ namespace Dadstorm
         /// <summary>
         /// ChildrenCount setter and getter.
         /// </summary>
-        public Dictionary<string, int> ChildrenCount
+        public ArrayList ChildrenCount
         {
             get { return childrenCount; }
             set { childrenCount = value; }
         }
-
-        public void incrementChildrenCount(string url)
-        {
-            ChildrenCount[url]++;
-        }
-
-        /// <summary>
-        /// SiblingCount setter and getter.
-        /// </summary>
-        public Dictionary<string, int> SiblingCount
-        {
-            get { return siblingCount; }
-            set { siblingCount = value; }
-        }
-
-        public void incrementSiblingCount(string url)
-        {
-            SiblingCount[url]++;
-        }
+        
 
         /// <summary>
         /// Response to a Start command.
@@ -359,8 +337,7 @@ namespace Dadstorm
             IList<Tuple> subTupleList = new List<Tuple>();
             SiblingsTimer = new Timer(AlivesParents.Method, this, ALIVE_TIMEOUT, ALIVE_TIMEOUT);
             ParentsTimer = new Timer(AlivesSiblings.Method, this, ALIVE_TIMEOUT, ALIVE_TIMEOUT);
-            CheckTimer = new Timer(CheckTimers.Method, this, ALIVE_TIMEOUT+5000, ALIVE_TIMEOUT+5000);
-            startTimersDictionaries();
+            startChildrenList();
             /*Console.WriteLine(repInfo.ReceiveInfoUrls.Count); TODO REMOVE DEBUGGING
 
             foreach(string asd in repInfo.ReceiveInfoUrls)
@@ -428,35 +405,15 @@ namespace Dadstorm
 
         }
 
-        public void startTimersDictionaries()
+        public void startChildrenList()
         {
-            ChildrenCount = new Dictionary<string, int>();
-            SiblingCount = new Dictionary<string, int>();
+            ChildrenCount = new ArrayList();
 
-
-            ArrayList allurls = new ArrayList();
             ArrayList temp;
             foreach (string opx in repInfo.SendInfoUrls.Keys)
             {
                 repInfo.SendInfoUrls.TryGetValue(opx, out temp);
-                allurls.AddRange(temp);
-            }
-
-            foreach (string url in allurls)
-            {
-                if (!url.Equals("File"))
-                {
-                    ChildrenCount.Add(url, 0);
-                }
-            }
-
-
-            foreach (string url2 in RepInfo.SiblingsUrls)
-            {
-                if (!url2.Equals(RepInfo.MyUrl))
-                {
-                    SiblingCount.Add(url2, 0);
-                }
+                ChildrenCount.AddRange(temp);
             }
         }
 
@@ -867,6 +824,11 @@ namespace Dadstorm
             Console.WriteLine(msg);
         }
 
+        public string getPing()
+        {
+            return "pong";
+        }
+
         public RepInfo getRepInfoFromRep()
         {
             return RepInfo;
@@ -1164,12 +1126,50 @@ namespace Dadstorm
         {
             if (!(me.RepFreeze && me.RepCrash))
             {
-                foreach (string url in me.ChildrenCount.Keys)
+                
+                foreach (string url in me.ChildrenCount.ToArray())
                 {
-                    Console.WriteLine("ENTREI: " + me.RepInfo.MyUrl);
-                    Console.WriteLine("Count: " + me.RepInfo.ReceiveInfoUrls.Count);
                     OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                    obj.incrementChildrenCount(me.RepInfo.MyUrl);
+                    try
+                    {
+                        String ping = obj.getPing();
+                    }
+                    catch (System.Net.Sockets.SocketException e)
+                    {
+                        /*ArrayList temp2;
+                        foreach (string opx in me.RepInfo.SendInfoUrls.Keys)
+                        {
+                            me.RepInfo.SendInfoUrls.TryGetValue(opx, out temp2);
+                            foreach (string s in temp2.ToArray())
+                            {
+                                Console.WriteLine("YO2: " + s);
+                            }
+                        }*/
+
+                        //Console.WriteLine("Children dead: " + url);
+                        //Console.WriteLine("YO: ");
+                        ArrayList temp;
+                        ArrayList renewList = new ArrayList();
+                        string renewOpx = "";
+                        foreach (string opx in me.RepInfo.SendInfoUrls.Keys)
+                        {
+                            me.RepInfo.SendInfoUrls.TryGetValue(opx, out temp);
+                            foreach(string s in temp.ToArray())
+                            {
+                                if (s.Equals(url))
+                                {
+                                    //Console.WriteLine("YO1: " + s);
+                                    temp.Remove(url);
+                                    renewList = temp;
+                                    renewOpx = opx;
+                                    break;
+                                }
+                            }
+                            
+                        }
+                        me.RepInfo.SendInfoUrls[renewOpx] = renewList;
+
+                    }
                 }
             }
 
@@ -1190,12 +1190,31 @@ namespace Dadstorm
         {
             if (!(me.RepFreeze && me.RepCrash))
             {
-                foreach(string url in me.SiblingCount.Keys)
+                foreach(string url in me.RepInfo.SiblingsUrls.ToArray())
                 {
-                    Console.WriteLine("ENTREI: " + me.RepInfo.MyUrl);
-                    Console.WriteLine("Sibling: " + url);
-                    OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                    obj.incrementSiblingCount(me.RepInfo.MyUrl);
+                    if (!url.Equals(me.RepInfo.MyUrl))
+                    {
+                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                        try
+                        {
+                            String ping = obj.getPing();
+                        }
+                        catch(System.Net.Sockets.SocketException e)
+                        {
+                            //Console.WriteLine("Sibling dead: " + url);
+                            /*foreach (string s in me.RepInfo.SiblingsUrls)
+                            {
+                                Console.WriteLine("CENAS 1: " + s);
+                            }*/
+
+                            me.RepInfo.SiblingsUrls.Remove(url);
+
+                            /*foreach (string s2 in me.RepInfo.SiblingsUrls)
+                            {
+                                Console.WriteLine("CENAS 2: " + s2);
+                            }*/
+                        }
+                    }
                 }
             }
         }
@@ -1206,38 +1225,5 @@ namespace Dadstorm
             sendAliveSiblings((OperatorServices)stateInfo);
         }
     }
-
-
-    class CheckTimers
-    {
-        public CheckTimers() { }
-
-        public static void checker(OperatorServices me)
-        {
-            if (!(me.RepFreeze && me.RepCrash))
-            {
-                Console.WriteLine("CHECKING SIBLINGS");
-                foreach (string url in me.SiblingCount.Keys)
-                {
-                    Console.WriteLine("urls: " + url + " counter: " + me.SiblingCount[url]);
-                }
-                Console.WriteLine("FINISHED SIBLINGS");
-
-                Console.WriteLine("CHECKING CHILDREN");
-                foreach (string url2 in me.ChildrenCount.Keys)
-                {
-                    Console.WriteLine("urls: " + url2 + " counter: " + me.ChildrenCount[url2]);
-                }
-                Console.WriteLine("FINISHED CHILDREN");
-            }
-        }
-
-        // This method is called by the timer delegate.
-        public static void Method(Object stateInfo)
-        {
-            checker((OperatorServices)stateInfo);
-        }
-    }
-
 
 }
