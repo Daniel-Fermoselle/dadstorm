@@ -289,6 +289,11 @@ namespace Dadstorm
             set { tupleToTupleProcessed = value; }
         }
 
+        public void addTupleToTupleProcessed(Tuple2TupleProcessed tt)
+        {
+            TupleToTupleProcessed.Add(tt);
+        }
+
         /// <summary>
         /// SiblingsTimer setter and getter.
         /// </summary>
@@ -496,6 +501,15 @@ namespace Dadstorm
                     result = value(t);
                     Tuple2TupleProcessed temp = new Tuple2TupleProcessed(t, result);
                     TupleToTupleProcessed.Add(temp);
+                    foreach (string url in RepInfo.SiblingsUrls)
+                    {
+                        if (!url.Equals(RepInfo.MyUrl))
+                        {
+                            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                            obj.addTupleToTupleProcessed(temp);
+                            Console.WriteLine("ADICIONEI TUPLO2TupleProcessed: " + t.toString() + " AO IRMAO: " + url);
+                        }
+                    }
                     maybeRep = temp;
                 }
             }
