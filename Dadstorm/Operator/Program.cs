@@ -788,7 +788,7 @@ namespace Dadstorm
                     {
                         OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls, t));//the tuple is sent because of the delegate being equal to every policy
                         if (comments) obj.ping("PING!");
-                        if (RepInfo.Semantics.Equals("exactly-once"))
+                        /*if (RepInfo.Semantics.Equals("exactly-once"))
                         {
                             foreach (Tuple2TupleProcessed t2t in obj.TupleToTupleProcessed.ToArray())
                             {
@@ -798,7 +798,7 @@ namespace Dadstorm
                                     return;
                                 }
                             }
-                        }
+                        }*/
                         if (!resend && !RepInfo.Semantics.Equals("at-most-once"))
                         {
                             AddTupleToReceiveAck(t, resend);//Save tuple to receive ack
