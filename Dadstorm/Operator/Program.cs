@@ -146,12 +146,7 @@ namespace Dadstorm
         /// Am alive timer to inform my parents(a.k.a senders) that i am alive
         /// </summary>
         private Timer parentsTimer;
-
-        /// <summary>
-        /// Checks the am alives
-        /// </summary>
-        private Timer checkTimer;
-
+        
         /// <summary>
         /// Timeout of an am alive in ms.
         /// </summary>
@@ -309,15 +304,7 @@ namespace Dadstorm
             get { return parentsTimer; }
             set { parentsTimer = value; }
         }
-
-        /// <summary>
-        /// CheckTimer setter and getter.
-        /// </summary>
-        public Timer CheckTimer
-        {
-            get { return checkTimer; }
-            set { checkTimer = value; }
-        }
+        
 
         /// <summary>
         /// ChildrenCount setter and getter.
@@ -337,7 +324,16 @@ namespace Dadstorm
             set { repTuples = value; }
         }
 
-        
+        public void addTuplesReplica(Tuple2TupleProcessed t)
+        {
+            RepTuples.Add(t);
+        }
+
+        public void RemoveTuplesReplica(Tuple2TupleProcessed t)
+        {
+            RepTuples.Remove(t);
+        }
+
         /// <summary>
         /// Response to a Start command.
         /// Sending read tuples from files to the buffer.
@@ -493,6 +489,21 @@ namespace Dadstorm
                 processors.TryGetValue(this.repInfo.Operator_spec, out value);
                 result = value(t);
             }
+
+            if (!RepInfo.Semantics.Equals("at-most-once") && maybeRep != null)
+            {
+                foreach (string url in RepInfo.SiblingsUrls.ToArray())
+                {
+                    if (!url.Equals(RepInfo.MyUrl))
+                    {
+                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                        obj.addTuplesReplica(maybeRep);
+                        Console.WriteLine("CENAS PARA TESTE COUNT: " + obj.RepTuples.Count);
+                        Console.WriteLine("Adicionei o tuplo: " + maybeRep.Pre.toString() + " à replica: " + url);
+                    }
+                }
+            }
+
             //Give ack to previous rep
             foreach (AckTuple t2 in ToBeAcked.ToArray())
             {
@@ -501,20 +512,11 @@ namespace Dadstorm
                     if(Comments)Console.WriteLine("Vou ser removido das listas porque ja fui processado : " + t.toString());
                     ackTuple(t, t2.UrlToAck);
                     this.removeToBeAck(t2);
-                    if (!RepInfo.Semantics.Equals("at-most-once") && maybeRep!=null)
-                    {
-                        foreach(string url in RepInfo.SiblingsUrls) {
-                            if (!url.Equals(RepInfo.MyUrl))
-                            {
-                                OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                                obj.RepTuples.Add(maybeRep);
-                                Console.WriteLine("Adicionei o tuplo: " + maybeRep.Pre.toString() + " à replica: " + url);
-                            }
-                        }
-                    }
                     break;
                 }
             }
+
+            
 
             //Console.WriteLine("YO i am: " + t.toString() + " and this is my ID: " + t.Id);
             return result;
@@ -897,7 +899,6 @@ namespace Dadstorm
                     ToReceiveAck.Add(t);
                 }
                 
-                //Console.WriteLine("Tuple to receive ack " + t.toString() + " added to the Dictionary");
             }
         }
 
@@ -919,14 +920,11 @@ namespace Dadstorm
         }
         public void receivedAck(Tuple t)//Remove tuple that needed to receive ack from the list
         {
-           
+            bool havebreak = false;
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
                 foreach (Tuple t2 in ToReceiveAck.ToArray())
                 {
-                    /*Console.WriteLine("GOING TO LIST");
-                    Console.WriteLine(t2.toString());
-                    Console.WriteLine("FINISHED LISTING");*/
                     if (t.Id == t2.Id)
                     {
                         
@@ -941,24 +939,36 @@ namespace Dadstorm
                                 break;
                             }
                         }
-                        foreach (string url in RepInfo.SiblingsUrls)//Removing tuples replicated on other replicas
+                        foreach (string url in RepInfo.SiblingsUrls.ToArray())//Removing tuples replicated on other replicas
                         {
-                            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                            foreach (Tuple2TupleProcessed tt in obj.RepTuples)
+                            Console.WriteLine("TESTE3");
+                            if (!url.Equals(RepInfo.MyUrl))
                             {
-                                foreach (Tuple posTuple in tt.Pos)
+                                Console.WriteLine("TESTE4");
+                                OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                                Console.WriteLine("TESTE5: " + obj.RepTuples.Count);
+                                foreach (Tuple2TupleProcessed tt in obj.RepTuples)
                                 {
-                                    if (posTuple.Id == t.Id)
+                                    Console.WriteLine("TESTE2");
+                                    foreach (Tuple posTuple in tt.Pos)
                                     {
                                         Console.WriteLine("TESTE");
-                                        obj.RepTuples.Remove(tt);
-                                        Console.WriteLine("Removi o tuplo: " + tt.Pre.toString() + " da replica: " + url);
+                                        if (posTuple.Id == t.Id)
+                                        {
+
+                                            obj.RemoveTuplesReplica(tt);
+                                            Console.WriteLine("Removi o tuplo: " + tt.Pre.toString() + " da replica: " + url);
+                                            havebreak=true;
+                                            break;
+                                        }
+                                    }
+                                    if (havebreak)
+                                    {
                                         break;
                                     }
                                 }
                             }
                         }
-                        //Console.WriteLine("CENAS ID: " + t.toString());
                         return;//We only want to remove 1
                     }
                 }
@@ -980,7 +990,7 @@ namespace Dadstorm
         /// </summary>
         private IList<string> elements;
 
-        private static int staticID = 0;
+        private static int staticID = 0;//This allow the id to be unique everytime a new tuple is created
 
         private int id;//Only to be used when the semantics is exactly once
 
