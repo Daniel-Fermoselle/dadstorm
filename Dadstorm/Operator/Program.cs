@@ -158,10 +158,9 @@ namespace Dadstorm
         private ArrayList childrenCount;
 
         /// <summary>
-        /// ArrayList with the replicated tuples in order to guarantee fault tolerance
+        /// ArrayList with the url of a children associated with its alive counter
         /// </summary>
-        private ArrayList repTuples;
-
+        private ArrayList opsIds;
 
 
         /// <summary>
@@ -176,7 +175,7 @@ namespace Dadstorm
             toReceiveAck = new ArrayList();
             toBeAcked = new ArrayList();
             timerAck = new ArrayList();
-            repTuples = new ArrayList();
+            opsIds = new ArrayList();
             tupleToTupleProcessed = new ArrayList();
             processors.Add("UNIQ", Unique);
             processors.Add("COUNT", Count);
@@ -315,24 +314,17 @@ namespace Dadstorm
             set { childrenCount = value; }
         }
 
+
         /// <summary>
-        /// RepTuples setter and getter.
+        /// OpsIds setter and getter.
         /// </summary>
-        public ArrayList RepTuples
+        public ArrayList OpsIds
         {
-            get { return repTuples; }
-            set { repTuples = value; }
+            get { return opsIds; }
+            set { opsIds = value; }
         }
+        
 
-        public void addTuplesReplica(Tuple2TupleProcessed t)
-        {
-            RepTuples.Add(t);
-        }
-
-        public void RemoveTuplesReplica(Tuple2TupleProcessed t)
-        {
-            RepTuples.Remove(t);
-        }
 
         /// <summary>
         /// Response to a Start command.
@@ -349,7 +341,12 @@ namespace Dadstorm
             ParentsTimer = new Timer(AlivesSiblings.Method, this, ALIVE_TIMEOUT, ALIVE_TIMEOUT);
             startChildrenList();
 
-            foreach (string s in repInfo.Input)
+            foreach (string opx in repInfo.SendInfoUrls.Keys)
+            {
+                OpsIds.Add(opx);
+            }
+
+                foreach (string s in repInfo.Input)
             {
                 if (s.Contains(".dat"))
                 {
@@ -463,11 +460,11 @@ namespace Dadstorm
             bool notInList = true;//is it needed to update the TupleToTupleProcessed array 
             IList<Tuple> result = new List<Tuple>();
             Tuple2TupleProcessed maybeRep = null;//It has to be null at the begining because the var must be assigned
-            if (!RepInfo.Semantics.Equals("at-most-once"))
+            if (RepInfo.Semantics.Equals("exactly-once"))
             {
                 foreach (Tuple2TupleProcessed t2t in TupleToTupleProcessed.ToArray())
                 {
-                    if (t.Id==t2t.Pre.Id && RepInfo.Semantics.Equals("exactly-once"))
+                    if (t.Id==t2t.Pre.Id)
                     {
                         Console.WriteLine("Tuple already processed gonna use the previous result: " + t.toString());
                         //result = t2t.Pos;
@@ -488,20 +485,6 @@ namespace Dadstorm
             {
                 processors.TryGetValue(this.repInfo.Operator_spec, out value);
                 result = value(t);
-            }
-
-            if (!RepInfo.Semantics.Equals("at-most-once") && maybeRep != null)
-            {
-                foreach (string url in RepInfo.SiblingsUrls.ToArray())
-                {
-                    if (!url.Equals(RepInfo.MyUrl))
-                    {
-                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                        obj.addTuplesReplica(maybeRep);
-                        Console.WriteLine("CENAS PARA TESTE COUNT: " + obj.RepTuples.Count);
-                        Console.WriteLine("Adicionei o tuplo: " + maybeRep.Pre.toString() + " à replica: " + url);
-                    }
-                }
             }
 
             //Give ack to previous rep
@@ -719,7 +702,7 @@ namespace Dadstorm
             ArrayList urls;
 
 
-            foreach (string opx in repInfo.SendInfoUrls.Keys)
+            foreach (string opx in OpsIds.ToArray())
             {
                 repInfo.SendInfoUrls.TryGetValue(opx, out urls);
                 if (urls.Count >= 1)
@@ -728,29 +711,41 @@ namespace Dadstorm
                     sendTuplePolicy value;
                     policies.TryGetValue(this.repInfo.Next_routing, out value);
                     //Getting the OperatorServices object 
-                    OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls, t));//the tuple is sent because of the delegate being equal to every policy
-                    if (comments) obj.ping("PING!");
-                    if (RepInfo.Semantics.Equals("exactly-once"))
+                    try
                     {
-                        foreach (Tuple2TupleProcessed t2t in obj.TupleToTupleProcessed.ToArray())
+                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls, t));//the tuple is sent because of the delegate being equal to every policy
+                        if (comments) obj.ping("PING!");
+                        if (RepInfo.Semantics.Equals("exactly-once"))
                         {
-                            if (t.Id == t2t.Pre.Id)
+                            foreach (Tuple2TupleProcessed t2t in obj.TupleToTupleProcessed.ToArray())
                             {
-                                Console.WriteLine("Tuple already processed by the next rep so not gonna send it again: " + t.toString());
-                                return;
+                                if (t.Id == t2t.Pre.Id)
+                                {
+                                    Console.WriteLine("Tuple already processed by the next rep so not gonna send it again: " + t.toString());
+                                    return;
+                                }
                             }
                         }
+                        if (!resend && !RepInfo.Semantics.Equals("at-most-once"))
+                        {
+                            AddTupleToReceiveAck(t, resend);//Save tuple to receive ack
+                        }
+                        if (!RepInfo.Semantics.Equals("at-most-once"))
+                        {
+                            obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
+                        }
+                        obj.AddTupleToBuffer(t);
                     }
-                    if (!resend && !RepInfo.Semantics.Equals("at-most-once"))
+                    catch(System.Net.Sockets.SocketException e)
                     {
-                        AddTupleToReceiveAck(t,resend);//Save tuple to receive ack
+                        if (!RepInfo.Semantics.Equals("at-most-once"))
+                        {
+
+                        }
                     }
-                    if (!RepInfo.Semantics.Equals("at-most-once"))
-                    {
-                        obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Send MyUrl to be acked
-                    }
-                    obj.AddTupleToBuffer(t);
-                    
+
+
+
                 }
             }
             if (last)
@@ -920,7 +915,6 @@ namespace Dadstorm
         }
         public void receivedAck(Tuple t)//Remove tuple that needed to receive ack from the list
         {
-            bool havebreak = false;
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
                 foreach (Tuple t2 in ToReceiveAck.ToArray())
@@ -937,36 +931,6 @@ namespace Dadstorm
                                 TimerAck.Remove(t3);
                                 Console.WriteLine("receivedAck: " + t.toString());
                                 break;
-                            }
-                        }
-                        foreach (string url in RepInfo.SiblingsUrls.ToArray())//Removing tuples replicated on other replicas
-                        {
-                            Console.WriteLine("TESTE3");
-                            if (!url.Equals(RepInfo.MyUrl))
-                            {
-                                Console.WriteLine("TESTE4");
-                                OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                                Console.WriteLine("TESTE5: " + obj.RepTuples.Count);
-                                foreach (Tuple2TupleProcessed tt in obj.RepTuples)
-                                {
-                                    Console.WriteLine("TESTE2");
-                                    foreach (Tuple posTuple in tt.Pos)
-                                    {
-                                        Console.WriteLine("TESTE");
-                                        if (posTuple.Id == t.Id)
-                                        {
-
-                                            obj.RemoveTuplesReplica(tt);
-                                            Console.WriteLine("Removi o tuplo: " + tt.Pre.toString() + " da replica: " + url);
-                                            havebreak=true;
-                                            break;
-                                        }
-                                    }
-                                    if (havebreak)
-                                    {
-                                        break;
-                                    }
-                                }
                             }
                         }
                         return;//We only want to remove 1
