@@ -158,10 +158,14 @@ namespace Dadstorm
         private const int ALIVE_TIMEOUT = 10000;
 
         /// <summary>
-        /// Dictionary with the url of a children associated with its alive counter
+        /// ArrayList with the url of a children associated with its alive counter
         /// </summary>
         private ArrayList childrenCount;
-        
+
+        /// <summary>
+        /// ArrayList with the replicated tuples in order to guarantee fault tolerance
+        /// </summary>
+        private ArrayList repTuples;
 
 
 
@@ -177,6 +181,7 @@ namespace Dadstorm
             toReceiveAck = new ArrayList();
             toBeAcked = new ArrayList();
             timerAck = new ArrayList();
+            repTuples = new ArrayList();
             tupleToTupleProcessed = new ArrayList();
             processors.Add("UNIQ", Unique);
             processors.Add("COUNT", Count);
@@ -322,8 +327,17 @@ namespace Dadstorm
             get { return childrenCount; }
             set { childrenCount = value; }
         }
-        
 
+        /// <summary>
+        /// RepTuples setter and getter.
+        /// </summary>
+        public ArrayList RepTuples
+        {
+            get { return repTuples; }
+            set { repTuples = value; }
+        }
+
+        
         /// <summary>
         /// Response to a Start command.
         /// Sending read tuples from files to the buffer.
@@ -338,12 +352,6 @@ namespace Dadstorm
             SiblingsTimer = new Timer(AlivesParents.Method, this, ALIVE_TIMEOUT, ALIVE_TIMEOUT);
             ParentsTimer = new Timer(AlivesSiblings.Method, this, ALIVE_TIMEOUT, ALIVE_TIMEOUT);
             startChildrenList();
-            /*Console.WriteLine(repInfo.ReceiveInfoUrls.Count); TODO REMOVE DEBUGGING
-
-            foreach(string asd in repInfo.ReceiveInfoUrls)
-            {
-                Console.WriteLine(asd);
-            }*/
 
             foreach (string s in repInfo.Input)
             {
@@ -353,18 +361,7 @@ namespace Dadstorm
                     tupleList = parser.processFile();
                     if (info.SiblingsUrls.Count == 1)
                     {
-                        for (int i = 0; i < subTupleList.Count; i++)
-                        {
-                            tupleList[i].Id = i;
-                        }
-
-                        /*foreach(Tuple t in tupleList)DEBUGGING IDS TODO REMOVE DEBUGGING
-                        {
-                            Console.WriteLine("Tuple: " + t.toString() + " Id: " + t.Id);
-                        }*/
-
                         subTupleList = tupleList;
-
                         //In this case all tuples are read by the replica
                     }
                     else
@@ -379,18 +376,14 @@ namespace Dadstorm
                             
                             for (int i = index * parts; i < tupleListSize; i++)
                             {
-                                tupleList[i].Id = i;
                                 subTupleList.Add(tupleList[i]);
-                                //Console.WriteLine("Tuple: " + tupleList[i].toString() + " Id: " + tupleList[i].Id);DEBUGGING IDS TODO REMOVE DEBUGGING
                             }
                         }
                         else
                         {
                             for (int i = index * parts; i < (index + 1) * parts; i++)
                             {
-                                tupleList[i].Id = i;
                                 subTupleList.Add(tupleList[i]);
-                                //Console.WriteLine("Tuple: " + subTupleList[i].toString() + " Id: " + subTupleList[i].Id);DEBUGGING IDS TODO REMOVE DEBUGGING
                             }
                         }
                     }
@@ -473,11 +466,12 @@ namespace Dadstorm
             processTuple value;
             bool notInList = true;//is it needed to update the TupleToTupleProcessed array 
             IList<Tuple> result = new List<Tuple>();
-            if (RepInfo.Semantics.Equals("exactly-once"))
+            Tuple2TupleProcessed maybeRep = null;//It has to be null at the begining because the var must be assigned
+            if (!RepInfo.Semantics.Equals("at-most-once"))
             {
                 foreach (Tuple2TupleProcessed t2t in TupleToTupleProcessed.ToArray())
                 {
-                    if (t.Id==t2t.Pre.Id)
+                    if (t.Id==t2t.Pre.Id && RepInfo.Semantics.Equals("exactly-once"))
                     {
                         Console.WriteLine("Tuple already processed gonna use the previous result: " + t.toString());
                         //result = t2t.Pos;
@@ -491,6 +485,7 @@ namespace Dadstorm
                     result = value(t);
                     Tuple2TupleProcessed temp = new Tuple2TupleProcessed(t, result);
                     TupleToTupleProcessed.Add(temp);
+                    maybeRep = temp;
                 }
             }
             else
@@ -506,9 +501,22 @@ namespace Dadstorm
                     if(Comments)Console.WriteLine("Vou ser removido das listas porque ja fui processado : " + t.toString());
                     ackTuple(t, t2.UrlToAck);
                     this.removeToBeAck(t2);
+                    if (!RepInfo.Semantics.Equals("at-most-once") && maybeRep!=null)
+                    {
+                        foreach(string url in RepInfo.SiblingsUrls) {
+                            if (!url.Equals(RepInfo.MyUrl))
+                            {
+                                OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                                obj.RepTuples.Add(maybeRep);
+                                Console.WriteLine("Adicionei o tuplo: " + maybeRep.Pre.toString() + " à replica: " + url);
+                            }
+                        }
+                    }
                     break;
                 }
             }
+
+            //Console.WriteLine("YO i am: " + t.toString() + " and this is my ID: " + t.Id);
             return result;
         }
 
@@ -933,6 +941,23 @@ namespace Dadstorm
                                 break;
                             }
                         }
+                        foreach (string url in RepInfo.SiblingsUrls)//Removing tuples replicated on other replicas
+                        {
+                            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                            foreach (Tuple2TupleProcessed tt in obj.RepTuples)
+                            {
+                                foreach (Tuple posTuple in tt.Pos)
+                                {
+                                    if (posTuple.Id == t.Id)
+                                    {
+                                        Console.WriteLine("TESTE");
+                                        obj.RepTuples.Remove(tt);
+                                        Console.WriteLine("Removi o tuplo: " + tt.Pre.toString() + " da replica: " + url);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                         //Console.WriteLine("CENAS ID: " + t.toString());
                         return;//We only want to remove 1
                     }
@@ -955,6 +980,8 @@ namespace Dadstorm
         /// </summary>
         private IList<string> elements;
 
+        private static int staticID = 0;
+
         private int id;//Only to be used when the semantics is exactly once
 
         /// <summary>
@@ -963,6 +990,7 @@ namespace Dadstorm
         public Tuple(IList<string> tuple)
         {
             this.elements = tuple;
+            this.id = System.Threading.Interlocked.Increment(ref staticID);
         }
 
         public IList<string> Elements
