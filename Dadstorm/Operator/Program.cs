@@ -511,7 +511,7 @@ namespace Dadstorm
                 if (t2.AckT.Id==t.Id)
                 {
                     if(Comments)Console.WriteLine("Vou ser removido das listas porque ja fui processado : " + t.toString());
-                    ackTuple(t, t2.UrlToAck);
+                    ackTuple(t);//This might get confused when more than one OP is used as input to this operator
                     this.removeToBeAck(t2);
                     break;
                 }
@@ -533,13 +533,25 @@ namespace Dadstorm
             return result;
         }
 
-        public void ackTuple(Tuple t, String url)//AckTuples if needed
+        public void ackTuple(Tuple t)//AckTuples if needed
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
                 Console.WriteLine("TupleAcked: " + t.toString());
-                OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                obj.receivedAck(t,true);
+                foreach (string url in RepInfo.ReceiveInfoUrls)//This might get confused when more than one OP is used as input to this operator
+                {
+                    try
+                    {
+                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                        obj.receivedAck(t, true);
+                        Console.WriteLine("CONSEGUI");
+                        break;
+                    }
+                    catch(System.Net.Sockets.SocketException e)
+                    {
+                        continue;
+                    }
+                }
             }
         }
 
@@ -720,6 +732,25 @@ namespace Dadstorm
         }
 
 
+        public void RecoverySend (ArrayList list)
+        {
+            string myUrl = RepInfo.MyUrl;
+            sendTuplePolicy value;
+            string tempUrl;
+            foreach(Tuple t in list.ToArray())
+            {
+                policies.TryGetValue(RepInfo.Routing, out value);
+                tempUrl=value(RepInfo.SiblingsUrls, t);
+                if (tempUrl.Equals(myUrl))
+                {
+                    Console.WriteLine("Eu sou a replica: " + myUrl + " e estou a reenviar o tuplo: " + t.toString());
+                    processTuple(t);
+                }
+            }
+        }
+
+
+
         /// <summary>
         /// Sends tuples to the next Operator in the channel.
         /// </summary>
@@ -775,10 +806,6 @@ namespace Dadstorm
                     }
                     catch(System.Net.Sockets.SocketException e)
                     {
-                        if (!RepInfo.Semantics.Equals("at-most-once"))
-                        {
-
-                        }
                     }
 
 
@@ -812,17 +839,7 @@ namespace Dadstorm
             Random r = new Random();
             return (string)urls[r.Next(urls.Count)];
         }
-
-        /// <summary>
-        /// Returns a url of a replica acording a hashing function
-        /// </summary>
-        /// <param name="msg">Message sent to PM.</param>
-        /*private string Hashing(ArrayList urls)
-        {
-            //TODO implement properly HASHING ANTIGO
-            return (string)urls[Int32.Parse(repInfo.Next_routing_param)];
-        }*/
-
+        
 
         /// <summary>
         /// Returns a url of a replica acording a hashing function
@@ -960,6 +977,7 @@ namespace Dadstorm
                     {
                         
                         ToReceiveAck.Remove(t);
+                        removeRepTuple(t);//removes if exists the replica of a a tuple processed
                         foreach(TimerTuple t3 in TimerAck.ToArray())
                         {
                             if (t.Id==t3.AckT.Id)
@@ -972,7 +990,7 @@ namespace Dadstorm
                         }
                         if (notRep)
                         {
-                            foreach (string url in RepInfo.SiblingsUrls)
+                            foreach (string url in RepInfo.SiblingsUrls.ToArray())
                             {
                                 if (!url.Equals(RepInfo.MyUrl))
                                 {
@@ -1189,18 +1207,6 @@ namespace Dadstorm
                     }
                     catch (System.Net.Sockets.SocketException e)
                     {
-                        /*ArrayList temp2;
-                        foreach (string opx in me.RepInfo.SendInfoUrls.Keys)
-                        {
-                            me.RepInfo.SendInfoUrls.TryGetValue(opx, out temp2);
-                            foreach (string s in temp2.ToArray())
-                            {
-                                Console.WriteLine("YO2: " + s);
-                            }
-                        }*/
-
-                        //Console.WriteLine("Children dead: " + url);
-                        //Console.WriteLine("YO: ");
                         ArrayList temp;
                         ArrayList renewList = new ArrayList();
                         string renewOpx = "";
@@ -1211,7 +1217,6 @@ namespace Dadstorm
                             {
                                 if (s.Equals(url))
                                 {
-                                    //Console.WriteLine("YO1: " + s);
                                     temp.Remove(url);
                                     renewList = temp;
                                     renewOpx = opx;
@@ -1254,18 +1259,8 @@ namespace Dadstorm
                         }
                         catch(System.Net.Sockets.SocketException e)
                         {
-                            //Console.WriteLine("Sibling dead: " + url);
-                            /*foreach (string s in me.RepInfo.SiblingsUrls)
-                            {
-                                Console.WriteLine("CENAS 1: " + s);
-                            }*/
-
                             me.RepInfo.SiblingsUrls.Remove(url);
-
-                            /*foreach (string s2 in me.RepInfo.SiblingsUrls)
-                            {
-                                Console.WriteLine("CENAS 2: " + s2);
-                            }*/
+                            me.RecoverySend(me.ReplicatedTuples);
                         }
                     }
                 }
