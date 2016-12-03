@@ -163,6 +163,8 @@ namespace Dadstorm
         private ArrayList opsIds;
 
 
+        private ArrayList replicatedTuples;
+
         /// <summary>
         /// OperatorServices constructor.
         /// </summary>
@@ -176,6 +178,7 @@ namespace Dadstorm
             toBeAcked = new ArrayList();
             timerAck = new ArrayList();
             opsIds = new ArrayList();
+            replicatedTuples = new ArrayList();
             tupleToTupleProcessed = new ArrayList();
             processors.Add("UNIQ", Unique);
             processors.Add("COUNT", Count);
@@ -323,8 +326,23 @@ namespace Dadstorm
             get { return opsIds; }
             set { opsIds = value; }
         }
-        
 
+
+        public ArrayList ReplicatedTuples
+        {
+            get { return replicatedTuples; }
+            set { replicatedTuples = value; }
+        }
+        
+        public void addRepTuple(Tuple t)
+        {
+            ReplicatedTuples.Add(t);
+        }
+
+        public void removeRepTuple(Tuple t)
+        {
+            ReplicatedTuples.Remove(t);
+        }
 
         /// <summary>
         /// Response to a Start command.
@@ -499,7 +517,17 @@ namespace Dadstorm
                 }
             }
 
-            
+            if (!RepInfo.Semantics.Equals("at-most-once")) {
+                foreach (string url in RepInfo.SiblingsUrls)
+                {
+                    if (!url.Equals(RepInfo.MyUrl))
+                    {
+                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                        obj.addRepTuple(t);
+                        Console.WriteLine("ADICIONEI TUPLO: " + t.toString() + " AO IRMAO: " + url);
+                    }
+                }
+            }
 
             //Console.WriteLine("YO i am: " + t.toString() + " and this is my ID: " + t.Id);
             return result;
@@ -511,7 +539,7 @@ namespace Dadstorm
             {
                 Console.WriteLine("TupleAcked: " + t.toString());
                 OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                obj.receivedAck(t);
+                obj.receivedAck(t,true);
             }
         }
 
@@ -729,6 +757,15 @@ namespace Dadstorm
                         if (!resend && !RepInfo.Semantics.Equals("at-most-once"))
                         {
                             AddTupleToReceiveAck(t, resend);//Save tuple to receive ack
+                            foreach (string url2 in RepInfo.SiblingsUrls)
+                            {
+                                if (!url2.Equals(RepInfo.MyUrl))
+                                {
+                                    OperatorServices obj2 = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url2);
+                                    obj2.AddTupleToReceiveAck(t,resend);
+                                    Console.WriteLine("ADICIONEI ACK DO TUPLO: " + t.toString() + " AO IRMAO: " + url2);
+                                }
+                            }
                         }
                         if (!RepInfo.Semantics.Equals("at-most-once"))
                         {
@@ -913,7 +950,7 @@ namespace Dadstorm
                 }
             }
         }
-        public void receivedAck(Tuple t)//Remove tuple that needed to receive ack from the list
+        public void receivedAck(Tuple t, bool notRep)//Remove tuple that needed to receive ack from the list
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
@@ -931,6 +968,18 @@ namespace Dadstorm
                                 TimerAck.Remove(t3);
                                 Console.WriteLine("receivedAck: " + t.toString());
                                 break;
+                            }
+                        }
+                        if (notRep)
+                        {
+                            foreach (string url in RepInfo.SiblingsUrls)
+                            {
+                                if (!url.Equals(RepInfo.MyUrl))
+                                {
+                                    OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                                    obj.receivedAck(t, false);
+                                    Console.WriteLine("REMOVI ACK DO TUPLO: " + t.toString() + " AO IRMAO: " + url);
+                                }
                             }
                         }
                         return;//We only want to remove 1
