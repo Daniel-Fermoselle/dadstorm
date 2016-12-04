@@ -1017,12 +1017,6 @@ namespace Dadstorm
         public void addTupleRead(Tuple t)
         {
             threadPool.addTupleRead(t);
-            /*Console.WriteLine("Starting");
-            foreach(Tuple test in threadPool.TuplesRead)
-            {
-                Console.WriteLine(test.toString());
-            }
-            Console.WriteLine("Finished");*/
         }
 
     }
