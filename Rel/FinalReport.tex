@@ -1,4 +1,4 @@
-\documentclass[11pt]{article}
+\documentclass[times, 10pt, twocolumn]{article}
 \usepackage{amsmath,amsfonts,amsthm,amssymb}
 \usepackage{fancyhdr}
 \usepackage{chngpage}
@@ -6,11 +6,14 @@
 \usepackage{graphicx}
 \usepackage{boxedminipage}
 \usepackage{enumerate}
+\usepackage{latex8}
+\usepackage{times}
 \usepackage[utf8]{inputenc}
 
-\title{DADSTORM:A simple, fault-tolerant and real-time stream processing system}
-\author{Group 12:
-\\
+\rfoot{Page \thepage \hspace{1pt} of \pageref{LastPage}} %Talvez tire a numeracao tendo em conta que eles nao a poe no template
+
+\title{DADSTORM\\A simple, fault-tolerant and real-time stream processing system}
+\author{DAD 2016-2017\\ Group 12:
 \\ Daniel Fermoselle nº 78207
 \\ João Marçal nº 78471
 \\ Tiago Rodrigues nº 78692
@@ -19,11 +22,98 @@
 \maketitle
 \date
 
-\abstract
+\begin{abstract}
 DADSTORM is a simple but reliable stream processing system. It's mainly used by Instituto Superior Tecnico Students.
-\\Its main features are: the 3 possible semantics it can have, fault-tolerant to f+1 faults, FALAR AQUI DA SINCRONIA
-This system is composed by a Puppet Master, Process Creation Service, Operators with their Replicas and Tuples.
-Our project is able to process hundreds of tuples per minute.
+\\The main features are: the 3 possible semantics it can have, fault-tolerant to f+1 faults per operator, FALAR AQUI DA SINCRONIA
+This system is composed by a Puppet Master, Process Creation Service, Operators with their Replicas, Tuples and ThreadPools.
+Our project is able to process tuples ...
+\end{abstract}
+
+%------------------------------------
 \section{Introduction}
-Nowadays streaming more and more information is added to the web and we want to process it as fast as possible as well as to get the desired information. In order to get that information in a reliable way we developed DADSTORM.
+Nowadays while streaming more and more information is added and we want to process it as fast as possible as well as to get the desired information even though existing the possibility of existing faults. In order to get that information in a reliable way we developed DADSTORM. This system process tuples based on 
+
+%------------------------------------
+\section{Programming Model}
+
+
+
+%------------------------------------
+\section{DADSTORM Abstractions}
+
+
+
+
+%------------------------------------
+\subsection{Tuple}
+
+
+
+
+%------------------------------------
+\subsection{ThreadPool}
+
+
+
+
+%------------------------------------
+\subsection{Operators and Replicas}
+
+
+
+
+
+
+
+%------------------------------------
+\subsection{Puppet Master}
+
+
+
+
+
+
+%------------------------------------
+\subsection{Process Creation Service}
+
+
+
+
+
+
+%------------------------------------
+\section{Architecture and Implementation}
+
+
+
+
+
+%------------------------------------
+\section{Discussion}
+
+
+
+
+%------------------------------------
+\section{Production Experiences}
+
+
+
+
+
+%------------------------------------
+\section{Evaluation}
+
+
+
+
+
+
+
+
+%------------------------------------
+\section{Conclusion}
+
+
+
 \end{document}
