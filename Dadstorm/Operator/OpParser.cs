@@ -41,7 +41,7 @@ namespace Dadstorm
             }
             else
             {
-                //TODO exception needed (question mark)
+                Console.WriteLine("File in path: " + path + "not found your file must be in this folder Dadstorm\\ProcessCreationService\\bin\\Debug");
             }
         }
 

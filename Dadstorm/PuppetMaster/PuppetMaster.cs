@@ -142,13 +142,7 @@ namespace Dadstorm
                     ArrayList getFrom = getFromUrls(ri.OperatorId);
                     ri.ReceiveInfoUrls = getFrom;
                     repS.updateRepInfo(ri);
-
-                    /*Console.WriteLine("Inicio: " + ri.MyUrl); TODO REMOVE DEBUGGING
-                    foreach (string s in getFrom)
-                    {
-                        Console.WriteLine(s);
-                    }
-                    Console.WriteLine("Fim: " + ri.MyUrl);*/
+                    
                 }
             }
             
@@ -164,25 +158,11 @@ namespace Dadstorm
                     RepInfos.Add(ri);
                 }
             }
-            /*foreach (RepInfo ri in RepInfos) TODO REMOVE DEBUGGING
-            {
-                Console.WriteLine("Inicio: " + ri.MyUrl);
-                foreach (string s in ri.ReceiveInfoUrls)
-                {
-                    Console.WriteLine(s);
-                }
-                Console.WriteLine("Fim: " + ri.MyUrl);
-            }*/
 
         }     
 
        public void Start(string operator_id)
        {
-           //To initialize op
-           //ConfigInfo c;
-           //config.TryGetValue(operator_id, out c);
-           //ArrayList urls = c.Urls;
-           //string url;
            RepServices repS;
 
            ArrayList array;
@@ -190,16 +170,7 @@ namespace Dadstorm
            for (int i = 0; i < array.Count; i++)
            {
                repS = (RepServices) array[i];
-               RepInfo info = repS.getRepInfoFromRep();//TODO Assync necessary maybe
-               /*url  = (string) urls[i];
-               string urlOnly = getIPFromUrl(url);
-               RepInfo info = new RepInfo(c.SourceInput, c.Routing, c.Routing_param, c.Next_routing, c.Next_routing_param, c.Operation,
-                                              c.OperationParam, getUrlsToSend(operator_id),
-                                              getPortFromUrl(url), loggingLvl,
-                                              "tcp://" + GetLocalIPAddress() + ":" + PM_PORT + "/" + PMSERVICE_NAME,urls,url,Semantics);
-
-
-               RepInfos.Add(info);*/
+               RepInfo info = repS.getRepInfoFromRep();
 
             //Asynchronous call without callback
             // Create delegate to remote method
@@ -210,7 +181,6 @@ namespace Dadstorm
                 
                 SendToLog("Start " + operator_id);
             }
-            //TODO: lancar excepcao ou aviso de que o id nao existe
         }
 
         public void Interval(string operator_id, string x_ms)
@@ -241,7 +211,7 @@ namespace Dadstorm
                 for (int i = 0; i < array.Count; i++)
                 {
                     RepServices repS = (RepServices)array[i];
-                    //TODO Maybe make this call receive callback 
+
                     //Asynchronous call without callback
                     // Create delegate to remote method
                     AsyncDelegate RemoteDel = new AsyncDelegate(repS.Status);
@@ -257,64 +227,17 @@ namespace Dadstorm
         public void Crash(string opx, string rep)
         {
             RepServices repServ = getReplicaServiceFromProcessname(opx, rep);
-            if (RepInfos != null) {
-                //CrashPrimaryReplicas(repServ,opx,rep); //TODO NEEDS TO BE FIXED TO BE ABLE TO WORK WITH FAULTS MID WORK
-            }
+
             //Asynchronous call without callback
             // Create delegate to remote method
             AsyncDelegate RemoteDel = new AsyncDelegate(repServ.Crash);
 
             // Call delegate to remote method
             IAsyncResult RemAr = RemoteDel.BeginInvoke(null, null);
-            //removeReplicaServiceFromProcessname(opx, rep);//remove crashed replica from the List of RepServices
 
             SendToLog("Crash " + opx + " " + rep);
         }
-
-        public void CrashPrimaryReplicas(RepServices repServ, string opx, string rep)//CHECK FIRST WHAT NEEDS TO BE REMOVED BEFORE CRASH OR NEVERMIND CAUSE ON A NORMAL CRASH IT WOULDN'T HAPPEN
-        {
-
-            RepInfo repInfo = repServ.getRepInfoFromRep();//TODO talvez tenhamos de fazer esta func async
-            String crashUrl = repInfo.MyUrl;
-            ArrayList urls;
-            ArrayList urls2;
-            ArrayList newUrls = new ArrayList();
-            ArrayList newUrls2 = new ArrayList();
-            RepInfo newRepInfo = new RepInfo();
-            Dictionary<string, ArrayList> newSendInfoUrls = new Dictionary<string, ArrayList>();
-            foreach (RepInfo ri in RepInfos)
-            {
-                foreach (string op in ri.SendInfoUrls.Keys)
-                {
-                    ri.SendInfoUrls.TryGetValue(op, out urls);
-                    if (urls.Contains(crashUrl))
-                    {
-                        newUrls = urls;
-                        newUrls.Remove(crashUrl);
-                        newSendInfoUrls = ri.SendInfoUrls;
-                        newSendInfoUrls.Remove(op);
-                        newSendInfoUrls.Add(op, newUrls);
-                        break;
-                    }
-                }
-                urls2 = ri.SiblingsUrls;//reusing urls not to create another temp array CARE WHEN USING IT
-                if (urls2.Contains(crashUrl))
-                {
-                    newUrls2 = urls2;//reusing newUrls not to create another temp array CARE WHEN USING IT
-                    newUrls2.Remove(crashUrl);//reusing newUrls not to create another temp array CARE WHEN USING IT
-                    
-                }
-                newRepInfo = ri;
-                newRepInfo.SendInfoUrls = newSendInfoUrls;
-                newRepInfo.SiblingsUrls = newUrls2;
-                RepServices temp = getRepServices(newRepInfo.MyUrl);
-                temp.updateRepInfo(newRepInfo);//TODO talvez tenhamos de fazer esta func async
-
-            }
-            RepInfos.Remove(repInfo);
-            removeReplicaServiceFromProcessname(opx, rep);
-         }
-        
+   
 
         public void Freeze(string opx, string rep)
         {
@@ -361,7 +284,6 @@ namespace Dadstorm
 
         public void ProcessSingleCommand()
         {
-            //TODO add if's to avoid wrong commands
             if(commands == null || !(nextCommand < commands.Count))
             {
                 SendToLog("No commands to run");
@@ -477,7 +399,7 @@ namespace Dadstorm
             ArrayList urls = new ArrayList();
             ConfigInfo c;
             config.TryGetValue(opId, out c);
-            foreach (string source in c.SourceInput)//Em principio so havera uma source TODO remover quando esclarecido
+            foreach (string source in c.SourceInput)
             {
                 if (source.Contains(".dat"))
                 {

@@ -11,11 +11,10 @@ namespace Dadstorm
         {
 
         }
-        public void createOperator(String port, string opName) //mas depois tera de retornar um operator
+        public void createOperator(String port, string opName)
         {
-            //TODO
             Process op = new Process();
-            op.StartInfo.FileName = "..\\..\\..\\Operator\\bin\\Debug\\Operator.exe";//tem de ser \\ porque e o caracter de escape
+            op.StartInfo.FileName = "..\\..\\..\\Operator\\bin\\Debug\\Operator.exe";
             op.StartInfo.Arguments = port + " " + opName;
             op.Start();
 

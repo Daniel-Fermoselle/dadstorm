@@ -156,32 +156,4 @@ namespace Dadstorm
        
 
     }
-
-    /*
-    class Test
-    {
-        public static void Main()
-        {
-
-            int x = 0;
-            ThrPool tpool = new ThrPool(5, 10);
-            Tuple t;
-            List<string> s;
-            for (int i = 0; i < 5; i++)
-            {
-                s = new List<string>();
-                x++;
-                s.Add(x.ToString()); s.Add((x + 1).ToString()); s.Add((x + 2).ToString());
-                t = new Tuple(s);
-                tpool.AssyncInvoke(t);
-                s = new List<string>();
-                x++;
-                s.Add(x.ToString()); s.Add((x + 1).ToString()); s.Add((x + 2).ToString());
-                t = new Tuple(s);
-                tpool.AssyncInvoke(t);
-            }
-            Console.ReadLine();
-        }
-    }
-    */
 }

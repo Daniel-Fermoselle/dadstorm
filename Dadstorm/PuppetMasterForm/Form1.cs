@@ -75,7 +75,6 @@ namespace Dadstorm
             }
             else
             {
-                //TODO: Exception PERGUNTAR
             }
         }
 
