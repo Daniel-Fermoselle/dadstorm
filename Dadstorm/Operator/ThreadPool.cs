@@ -82,6 +82,11 @@ namespace Dadstorm
         }
      
 
+        public void addTupleRead (Tuple t)
+        {
+            tuplesRead.Add(t);
+        }
+
         /// <summary>
         /// ConsumeRead gets tuple from bufferRead and processes it.
         /// </summary>
@@ -105,6 +110,22 @@ namespace Dadstorm
                     {
                         //Mark tuple as read
                         tuplesRead.Add(tuple);
+
+                        if (!operatorService.RepInfo.Semantics.Equals("at-most-once"))
+                        {//If the routing of this replica is primary we want to share the readtuples var
+                         //in order to have consistency while counting or check if a tuple is unique
+                            if (operatorService.RepInfo.Routing.Equals("primary"))
+                            {
+                                foreach(string url in operatorService.RepInfo.SiblingsUrls.ToArray())
+                                {
+                                    if (!url.Equals(operatorService.RepInfo.MyUrl))
+                                    {
+                                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                                        obj.addTupleRead(tuple);
+                                    }
+                                }
+                            }
+                        }
 
                         //Send log to PM
                         bufferProcessed.Produce(tuple);

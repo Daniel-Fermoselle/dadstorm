@@ -12,18 +12,7 @@ namespace Dadstorm
         private List<Tuple> tuples;
         private String[] lines;
         private int line;
-
-
-        //FOR TESTING PURPOSE
-        /*static void Main(string[] args)
-        {
-            OpParser op = new OpParser("..\\..\\..\\..\\..\\..\\ex.dat");
-            List<Tuple> test = op.processFile();
-            System.Console.WriteLine(test.ToString());
-            System.Console.WriteLine("<enter> para sair...");
-            System.Console.ReadLine();
-        }*/
-        //FOR TESTING PURPOSE
+        
 
         public OpParser(String p)
         {

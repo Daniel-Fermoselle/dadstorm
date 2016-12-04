@@ -10,8 +10,8 @@ using System.Threading;
 
 namespace Dadstorm
 {
-    delegate IList<Tuple> processTuple(Tuple t);
-    delegate string sendTuplePolicy(ArrayList urls, Tuple t);//added Tuple t but when not need will receive it not using it
+    delegate IList<Tuple> processTuple(Tuple t);//delegate with the type of processing of this replica
+    delegate string sendTuplePolicy(ArrayList urls, Tuple t);//delegate related with the sending policy of this replica
     delegate void sendTupleDelegate(Tuple t);//Delegate to the ResendTuple
     delegate void sendAlivesDelegate(OperatorServices ri);//Delegate to the am alive messages
 
@@ -1009,6 +1009,20 @@ namespace Dadstorm
                 }
                 Console.WriteLine("receivedAck: Error while removing tuple after being acked: " + t.toString());
             }
+        }
+
+
+        //If the routing of this replica is primary we want to share the readtuples var
+        //in order to have consistency while counting or check if a tuple is unique
+        public void addTupleRead(Tuple t)
+        {
+            threadPool.addTupleRead(t);
+            /*Console.WriteLine("Starting");
+            foreach(Tuple test in threadPool.TuplesRead)
+            {
+                Console.WriteLine(test.toString());
+            }
+            Console.WriteLine("Finished");*/
         }
 
     }
