@@ -153,9 +153,9 @@ namespace Dadstorm
         private const int ALIVE_TIMEOUT = 10000;
 
         /// <summary>
-        /// ArrayList with the url of a children associated with its alive counter
+        /// ArrayList with the url of the parents of this replica
         /// </summary>
-        private ArrayList childrenCount;
+        private ArrayList parentsUrl;
 
         /// <summary>
         /// ArrayList with the url of the OP ids
@@ -163,11 +163,11 @@ namespace Dadstorm
         private ArrayList opsIds;
 
         /// <summary>
-        /// ArrayList with the tuples that are replicated on the other replicas
+        /// ArrayList with the tuples that are replicated on the other replicas to allow the operator to recover in case a replica dies
         /// </summary>
         private ArrayList replicatedTuples;
 
-
+        private string operatorName;
 
         /// <summary>
         /// OperatorServices constructor.
@@ -315,15 +315,15 @@ namespace Dadstorm
             get { return parentsTimer; }
             set { parentsTimer = value; }
         }
-        
+
 
         /// <summary>
-        /// ChildrenCount setter and getter.
+        /// ParentsUrl setter and getter.
         /// </summary>
-        public ArrayList ChildrenCount
+        public ArrayList ParentsUrl
         {
-            get { return childrenCount; }
-            set { childrenCount = value; }
+            get { return parentsUrl; }
+            set { parentsUrl = value; }
         }
 
 
@@ -355,6 +355,13 @@ namespace Dadstorm
             ReplicatedTuples.Remove(t);
         }
 
+
+        public string OperatorName
+        {
+            get { return operatorName; }
+            set { operatorName = value; }
+        }
+
         /// <summary>
         /// Response to a Start command.
         /// Sending read tuples from files to the buffer.
@@ -369,7 +376,7 @@ namespace Dadstorm
             SiblingsTimer = new Timer(AlivesParents.Method, this, ALIVE_TIMEOUT, ALIVE_TIMEOUT);
             ParentsTimer = new Timer(AlivesSiblings.Method, this, ALIVE_TIMEOUT, ALIVE_TIMEOUT);
             startChildrenList();
-
+            OperatorName = RepInfo.OperatorId + RepInfo.SiblingsUrls.IndexOf(info.MyUrl);
             foreach (string opx in repInfo.SendInfoUrls.Keys)
             {
                 OpsIds.Add(opx);
@@ -379,7 +386,7 @@ namespace Dadstorm
             {
                 if (s.Contains(".dat"))
                 {
-                    OpParser parser = new OpParser(s);
+                    OpParser parser = new OpParser(s, OperatorName);
                     tupleList = parser.processFile();
                     if (info.SiblingsUrls.Count == 1)
                     {
@@ -422,13 +429,13 @@ namespace Dadstorm
 
         public void startChildrenList()//Start array with every url of a replica which is going to receive tuples from this one
         {
-            ChildrenCount = new ArrayList();
+            ParentsUrl = new ArrayList();
 
             ArrayList temp;
             foreach (string opx in repInfo.SendInfoUrls.Keys)
             {
                 repInfo.SendInfoUrls.TryGetValue(opx, out temp);
-                ChildrenCount.AddRange(temp);
+                ParentsUrl.AddRange(temp);
             }
         }
 
@@ -489,9 +496,10 @@ namespace Dadstorm
             IList<Tuple> result = new List<Tuple>();
             if (RepInfo.Semantics.Equals("exactly-once"))
             {
+                Console.WriteLine("Tuple: " + t.toString() + " id: " + t.Id);
                 foreach (Tuple2TupleProcessed t2t in TupleToTupleProcessed.ToArray())//List of tuples already processed
                 {
-                    if (t.Id==t2t.Pre.Id)//Checking if the new processing tuple was already processed
+                    if (t.Id.Equals(t2t.Pre.Id))//Checking if the new processing tuple was already processed
                     {
                         if (Comments) Console.WriteLine("Tuple already processed going to reject it");
                         result = null;//rejects duplicated tuples
@@ -504,13 +512,19 @@ namespace Dadstorm
                     result = value(t);//Processing the tuple
                     Tuple2TupleProcessed temp = new Tuple2TupleProcessed(t, result);
                     TupleToTupleProcessed.Add(temp);
-                    foreach (string url in RepInfo.SiblingsUrls)//in this semantics (exactly-once) the sibling tuples receive a copy of the already processed tuples
+                    foreach (string url in RepInfo.SiblingsUrls.ToArray())//in this semantics (exactly-once) the sibling tuples receive a copy of the already processed tuples
                     {
                         if (!url.Equals(RepInfo.MyUrl))
                         {
-                            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                            obj.addTupleToTupleProcessed(temp);
-                            Console.WriteLine("TupleToTupleProcessed added: " + t.toString() + " to the sibling: " + url);
+                            try
+                            {
+                                OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                                obj.addTupleToTupleProcessed(temp);
+                                Console.WriteLine("TupleToTupleProcessed added: " + t.toString() + " to the sibling: " + url);
+                            }
+                            catch (System.Net.Sockets.SocketException e)
+                            {//if the other replica is dead there is no problem in not having it receiving the copy of the already processed Tuples aka TupleToTupleProcessed
+                            }
                         }
                     }
                 }
@@ -524,7 +538,7 @@ namespace Dadstorm
             //Give ack to previous rep
             foreach (AckTuple t2 in ToBeAcked.ToArray())
             {
-                if (t2.AckT.Id==t.Id)
+                if (t2.AckT.Id.Equals(t.Id))
                 {
                     Console.WriteLine("Going to remove the tuple from to be acked list : " + t.toString());
                     ackTuple(t);//This might get confused when more than one OP is used as input to this operator
@@ -534,13 +548,20 @@ namespace Dadstorm
             }
 
             if (!RepInfo.Semantics.Equals("at-most-once")) {
-                foreach (string url in RepInfo.SiblingsUrls)//Sharing with this rep siblings the tuples that need to receive ack in order to allow fault tolerance
+                foreach (string url in RepInfo.SiblingsUrls.ToArray())//Sharing with this rep siblings the tuples that need to receive ack in order to allow fault tolerance
                 {
                     if (!url.Equals(RepInfo.MyUrl))
                     {
-                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                        obj.addRepTuple(t);
-                        Console.WriteLine("Added tuple: " + t.toString() + " to the sibling in: " + url);
+                        try
+                        {
+                            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                            obj.addRepTuple(t);
+                            Console.WriteLine("Added tuple: " + t.toString() + " to the sibling in: " + url);
+                        }
+
+                        catch (System.Net.Sockets.SocketException e)
+                        {//If the other replicas is dead there is no problem in not having it receiving the copy of the tuples that need to be processed in case of failure of the "main" replica
+                        }
                     }
                 }
             }
@@ -562,7 +583,7 @@ namespace Dadstorm
                         if (comments) Console.WriteLine("At least one replica received the ack");
                         break;
                     }
-                    catch(System.Net.Sockets.SocketException e)
+                    catch(System.Net.Sockets.SocketException e)//It s only needed to receive at least one ack per operator i.e just one replica of an operator needs to receive the ack
                     {
                         continue;
                     }
@@ -588,7 +609,8 @@ namespace Dadstorm
                 }
             }
 
-            tupleProcessed.Add(t);
+            Tuple newTuple = new Tuple(t.Elements, OperatorName);
+            tupleProcessed.Add(newTuple);
             return tupleProcessed;
         }
 
@@ -603,7 +625,7 @@ namespace Dadstorm
 
             //WARNING THE FOLLOWING CONTENT IS FOR PRO MLG PLAYERS ONLY
             countTuple.Add((threadPool.TuplesRead.Count+1).ToString());
-            Tuple tuple = new Tuple(countTuple);
+            Tuple tuple = new Tuple(countTuple, OperatorName);
             tupleProcessed.Add(tuple);
 
             return tupleProcessed;
@@ -616,8 +638,8 @@ namespace Dadstorm
         public IList<Tuple> Dup(Tuple t)
         {
             IList<Tuple> tupleProcessed = new List<Tuple>();
-
-            tupleProcessed.Add(t);
+            Tuple newTuple = new Tuple(t.Elements, OperatorName);
+            tupleProcessed.Add(newTuple);
             return tupleProcessed;
         }
 
@@ -632,9 +654,10 @@ namespace Dadstorm
             string condition = (string) repInfo.Operator_param[1];
             string value = t.Index(Int32.Parse((string) repInfo.Operator_param[0])-1);
             int condResult = String.Compare(value, param);//returns 0 if value equals param, -1 if value > param , 1 if value < param
+            Tuple newTuple = new Tuple(t.Elements, OperatorName);
+            tupleProcessed.Add(newTuple);
             if (condition.Equals("="))
             {
-                tupleProcessed.Add(t);
                 if (condResult==0)
                 {
                     return tupleProcessed;
@@ -644,7 +667,6 @@ namespace Dadstorm
 
             else if (condition.Equals("<"))
             {
-                tupleProcessed.Add(t);
                 if (condResult == 1)
                 {
                     return tupleProcessed;
@@ -655,7 +677,6 @@ namespace Dadstorm
 
             else if (condition.Equals(">"))
             {
-                tupleProcessed.Add(t);
                 if (condResult == -1)
                 {
                     return tupleProcessed;
@@ -706,7 +727,7 @@ namespace Dadstorm
                         if(comments) Console.WriteLine("Map call result was: ");
                         foreach (IList<string> tuple in result)
                         {
-                            tupleProcessed.Add(new Tuple(tuple));
+                            tupleProcessed.Add(new Tuple(tuple, OperatorName));
                             if (comments)
                             {
                                 Console.Write("tuple: ");
@@ -737,7 +758,7 @@ namespace Dadstorm
         {
             foreach (TimerTuple t3 in TimerAck.ToArray())
             {
-                if (t3.AckT.Id==t.Id)
+                if (t3.AckT.Id.Equals(t.Id))
                 {
                     Console.WriteLine("Resending tuple: " + t.toString());
                     SendTuple(t,true);//true states its resending
@@ -795,7 +816,7 @@ namespace Dadstorm
                         if (!resend && !RepInfo.Semantics.Equals("at-most-once"))
                         {
                             AddTupleToReceiveAck(t, resend);//Save tuple to receive ack stating if it is a resend or not
-                            foreach (string url2 in RepInfo.SiblingsUrls)//share the acks that need to be received with its siblings
+                            foreach (string url2 in RepInfo.SiblingsUrls.ToArray())//share the acks that need to be received with its siblings
                             {
                                 if (!url2.Equals(RepInfo.MyUrl))
                                 {
@@ -812,7 +833,7 @@ namespace Dadstorm
                         obj.AddTupleToBuffer(t);
                     }
                     catch(System.Net.Sockets.SocketException e)
-                    {
+                    {// if the other replica rejects the connection the tuple is not send and the timer will make this replica resend the tuple to one of the possible sending replicas
                     }
 
 
@@ -977,14 +998,14 @@ namespace Dadstorm
             {
                 foreach (Tuple t2 in ToReceiveAck.ToArray())
                 {
-                    if (t.Id == t2.Id)
+                    if (t.Id.Equals(t2.Id))
                     {
                         
                         ToReceiveAck.Remove(t);
                         removeRepTuple(t);//removes if exists the replica of a a tuple processed
                         foreach(TimerTuple t3 in TimerAck.ToArray())
                         {
-                            if (t.Id==t3.AckT.Id)
+                            if (t.Id.Equals(t3.AckT.Id))
                             {
                                 t3.Time.Dispose();
                                 TimerAck.Remove(t3);
@@ -998,9 +1019,15 @@ namespace Dadstorm
                             {
                                 if (!url.Equals(RepInfo.MyUrl))
                                 {
-                                    OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                                    obj.receivedAck(t, false);
-                                    Console.WriteLine("Removed ack of tuple: " + t.toString() + " from sibling: " + url);
+                                    try
+                                    {
+                                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                                        obj.receivedAck(t, false);
+                                        Console.WriteLine("Removed ack of tuple: " + t.toString() + " from sibling: " + url);
+                                    }
+                                    catch (System.Net.Sockets.SocketException e)
+                                    {//if the replica that should received ack is dead no problem
+                                    }
                                 }
                             }
                         }
@@ -1035,15 +1062,17 @@ namespace Dadstorm
 
         private static int staticID = 0;//This allow the id to be unique everytime a new tuple is created
 
-        private int id;//Only to be used when the semantics is exactly once
+        private string id;//Only to be used when the semantics is exactly once
 
         /// <summary>
         /// Tuple Contructor.
         /// </summary>
-        public Tuple(IList<string> tuple)
+        public Tuple(IList<string> tuple, string opId)
         {
             this.elements = tuple;
-            this.id = System.Threading.Interlocked.Increment(ref staticID);
+            int tempId = System.Threading.Interlocked.Increment(ref staticID);
+            string stringId = tempId.ToString();
+            this.id = opId + stringId;
         }
 
         public IList<string> Elements
@@ -1052,7 +1081,7 @@ namespace Dadstorm
             set { elements = value;}
         }
 
-        public int Id
+        public string Id
         {
             get { return id; }
             set { id = value; }
@@ -1216,16 +1245,15 @@ namespace Dadstorm
             if (!(me.RepFreeze && me.RepCrash))
             {
                 
-                foreach (string url in me.ChildrenCount.ToArray())
+                foreach (string url in me.ParentsUrl.ToArray())
                 {
-                    OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                    try
-                    {
+                    try { 
+                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
                         String ping = obj.getPing();
                     }
-                    catch (System.Net.Sockets.SocketException e)
+                    catch (System.Net.Sockets.SocketException e)//if a parent of a replica dies happens the following
                     {
-                        me.ChildrenCount.Remove(url);
+                        me.ParentsUrl.Remove(url);
                         ArrayList temp;
                         ArrayList renewList = new ArrayList();
                         string renewOpx = "";
@@ -1273,12 +1301,11 @@ namespace Dadstorm
                 {
                     if (!url.Equals(me.RepInfo.MyUrl))
                     {
-                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                        try
-                        {
+                        try { 
+                            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
                             String ping = obj.getPing();
                         }
-                        catch(System.Net.Sockets.SocketException e)
+                        catch(System.Net.Sockets.SocketException e)//If a sibling of a replica dies happens the following
                         {
                             me.RepInfo.SiblingsUrls.Remove(url);
                             me.RecoverySend(me.ReplicatedTuples);

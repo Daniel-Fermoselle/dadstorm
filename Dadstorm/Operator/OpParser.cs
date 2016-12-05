@@ -12,12 +12,14 @@ namespace Dadstorm
         private List<Tuple> tuples;
         private String[] lines;
         private int line;
+        private string opId;
         
 
-        public OpParser(String p)
+        public OpParser(String p, string opId)
         {
             path = p;
             tuples = new List<Tuple>();
+            this.opId = opId;
         }
 
 
@@ -56,7 +58,7 @@ namespace Dadstorm
                     {
                         temp.Add(s);
                     }
-                    Tuple t = new Tuple(temp);
+                    Tuple t = new Tuple(temp,opId);
                     getTuples().Add(t);
                 }
 
