@@ -574,7 +574,7 @@ namespace Dadstorm
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
                 Console.WriteLine("TupleAcked: " + t.toString());
-                foreach (string url in RepInfo.ReceiveInfoUrls)//Acking tuples to the previous op, if at least one receives the ack the tuple is acked and propagated
+                foreach (string url in RepInfo.ReceiveInfoUrls.ToArray())//Acking tuples to the previous op, if at least one receives the ack the tuple is acked and propagated
                 {
                     try
                     {
@@ -1257,7 +1257,7 @@ namespace Dadstorm
                         ArrayList temp;
                         ArrayList renewList = new ArrayList();
                         string renewOpx = "";
-                        foreach (string opx in me.RepInfo.SendInfoUrls.Keys)
+                        foreach (string opx in me.OpsIds.ToArray())
                         {
                             me.RepInfo.SendInfoUrls.TryGetValue(opx, out temp);
                             foreach(string s in temp.ToArray())
