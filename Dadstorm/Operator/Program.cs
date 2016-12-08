@@ -759,6 +759,7 @@ namespace Dadstorm
 
         public void ResendTuple(Tuple t)//Resends the Tuple t saying it is a resending
         {
+            while (RepFreeze) { }
             foreach (TimerTuple t3 in TimerAck.ToArray())
             {
                 if (t3 != null && t3.AckT.Id.Equals(t.Id))
@@ -775,6 +776,7 @@ namespace Dadstorm
         //So all its siblings will check the replicas of tuples and test if they have to process them
         public void RecoverySend (ArrayList list)
         {
+            while (RepFreeze) { }
             string myUrl = RepInfo.MyUrl;
             sendTuplePolicy value;
             string tempUrl;
