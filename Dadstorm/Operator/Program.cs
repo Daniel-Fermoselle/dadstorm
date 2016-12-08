@@ -135,7 +135,7 @@ namespace Dadstorm
         /// <summary>
         /// Timeout of an ack in ms for the at least once semantic and exactly once.
         /// </summary>
-        private const int TIMEOUT = 8000;
+        private const int TIMEOUT = 10000;
 
         /// <summary>
         /// Am alive timer to inform my siblings that i am alive
@@ -150,12 +150,12 @@ namespace Dadstorm
         /// <summary>
         /// Timeout of an am alive in ms.
         /// </summary>
-        private const int ALIVE_TIMEOUT = 10000;
+        private const int ALIVE_TIMEOUT = 12000;
 
         /// <summary>
         /// ArrayList with the url of the parents of this replica
         /// </summary>
-        private ArrayList parentsUrl;
+        private ArrayList childrensUrl;
 
         /// <summary>
         /// ArrayList with the url of the OP ids
@@ -318,12 +318,12 @@ namespace Dadstorm
 
 
         /// <summary>
-        /// ParentsUrl setter and getter.
+        /// ChildrensUrl setter and getter.
         /// </summary>
-        public ArrayList ParentsUrl
+        public ArrayList ChildrensUrl
         {
-            get { return parentsUrl; }
-            set { parentsUrl = value; }
+            get { return childrensUrl; }
+            set { childrensUrl = value; }
         }
 
 
@@ -429,13 +429,13 @@ namespace Dadstorm
 
         public void startChildrenList()//Start array with every url of a replica which is going to receive tuples from this one
         {
-            ParentsUrl = new ArrayList();
+            ChildrensUrl = new ArrayList();
 
             ArrayList temp;
             foreach (string opx in repInfo.SendInfoUrls.Keys)
             {
                 repInfo.SendInfoUrls.TryGetValue(opx, out temp);
-                ParentsUrl.AddRange(temp);
+                ChildrensUrl.AddRange(temp);
             }
         }
 
@@ -538,7 +538,7 @@ namespace Dadstorm
             //Give ack to previous rep
             foreach (AckTuple t2 in ToBeAcked.ToArray())
             {
-                if (t2.AckT.Id.Equals(t.Id))
+                if (t2 != null && t2.AckT.Id.Equals(t.Id))
                 {
                     Console.WriteLine("Going to remove the tuple from to be acked list : " + t.toString());
                     ackTuple(t);//This might get confused when more than one OP is used as input to this operator
@@ -1245,15 +1245,15 @@ namespace Dadstorm
             if (!(me.RepFreeze && me.RepCrash))
             {
                 
-                foreach (string url in me.ParentsUrl.ToArray())
+                foreach (string url in me.ChildrensUrl.ToArray())
                 {
                     try { 
                         OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
                         String ping = obj.getPing();
                     }
-                    catch (System.Net.Sockets.SocketException e)//if a parent of a replica dies happens the following
+                    catch (System.Net.Sockets.SocketException e)//if a children of a replica dies happens the following
                     {
-                        me.ParentsUrl.Remove(url);
+                        me.ChildrensUrl.Remove(url);
                         ArrayList temp;
                         ArrayList renewList = new ArrayList();
                         string renewOpx = "";

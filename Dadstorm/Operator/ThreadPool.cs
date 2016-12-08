@@ -120,8 +120,14 @@ namespace Dadstorm
                                 {
                                     if (!url.Equals(operatorService.RepInfo.MyUrl))
                                     {
-                                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                                        obj.addTupleRead(tuple);
+                                        try
+                                        {
+                                            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                                            obj.addTupleRead(tuple);
+                                        }
+                                        catch (System.Net.Sockets.SocketException e)
+                                        {// if the other replica rejects the connection the tuple is not send to the sibling but there is no problem because it is dead
+                                        }
                                     }
                                 }
                             }
