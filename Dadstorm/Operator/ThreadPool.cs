@@ -118,7 +118,7 @@ namespace Dadstorm
                             {
                                 foreach(string url in operatorService.RepInfo.SiblingsUrls.ToArray())
                                 {
-                                    if (!url.Equals(operatorService.RepInfo.MyUrl))
+                                    if (url!= null && !url.Equals(operatorService.RepInfo.MyUrl))
                                     {
                                         try
                                         {

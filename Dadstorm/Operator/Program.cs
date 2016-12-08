@@ -499,7 +499,7 @@ namespace Dadstorm
                 Console.WriteLine("Tuple: " + t.toString() + " id: " + t.Id);
                 foreach (Tuple2TupleProcessed t2t in TupleToTupleProcessed.ToArray())//List of tuples already processed
                 {
-                    if (t.Id.Equals(t2t.Pre.Id))//Checking if the new processing tuple was already processed
+                    if (t2t!=null && t.Id.Equals(t2t.Pre.Id))//Checking if the new processing tuple was already processed
                     {
                         if (Comments) Console.WriteLine("Tuple already processed going to reject it");
                         result = null;//rejects duplicated tuples
@@ -514,7 +514,7 @@ namespace Dadstorm
                     TupleToTupleProcessed.Add(temp);
                     foreach (string url in RepInfo.SiblingsUrls.ToArray())//in this semantics (exactly-once) the sibling tuples receive a copy of the already processed tuples
                     {
-                        if (!url.Equals(RepInfo.MyUrl))
+                        if (url!=null && !url.Equals(RepInfo.MyUrl))
                         {
                             try
                             {
@@ -550,7 +550,7 @@ namespace Dadstorm
             if (!RepInfo.Semantics.Equals("at-most-once")) {
                 foreach (string url in RepInfo.SiblingsUrls.ToArray())//Sharing with this rep siblings the tuples that need to receive ack in order to allow fault tolerance
                 {
-                    if (!url.Equals(RepInfo.MyUrl))
+                    if (url!=null && !url.Equals(RepInfo.MyUrl))
                     {
                         try
                         {
@@ -578,10 +578,13 @@ namespace Dadstorm
                 {
                     try
                     {
-                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                        obj.receivedAck(t, true);
-                        if (comments) Console.WriteLine("At least one replica received the ack");
-                        break;
+                        if (url != null)
+                        {
+                            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                            obj.receivedAck(t, true);
+                            if (comments) Console.WriteLine("At least one replica received the ack");
+                            break;
+                        }
                     }
                     catch(System.Net.Sockets.SocketException e)//It s only needed to receive at least one ack per operator i.e just one replica of an operator needs to receive the ack
                     {
@@ -758,7 +761,7 @@ namespace Dadstorm
         {
             foreach (TimerTuple t3 in TimerAck.ToArray())
             {
-                if (t3.AckT.Id.Equals(t.Id))
+                if (t3 != null && t3.AckT.Id.Equals(t.Id))
                 {
                     Console.WriteLine("Resending tuple: " + t.toString());
                     SendTuple(t,true);//true states its resending
@@ -777,12 +780,15 @@ namespace Dadstorm
             string tempUrl;
             foreach(Tuple t in list.ToArray())
             {
-                policies.TryGetValue(RepInfo.Routing, out value);
-                tempUrl=value(RepInfo.SiblingsUrls, t);
-                if (tempUrl.Equals(myUrl))
+                if (t != null)
                 {
-                    if (Comments) Console.WriteLine("I am replica: " + myUrl + " I am resending tuple: " + t.toString());
-                    processTuple(t);
+                    policies.TryGetValue(RepInfo.Routing, out value);
+                    tempUrl = value(RepInfo.SiblingsUrls, t);
+                    if (tempUrl.Equals(myUrl))
+                    {
+                        if (Comments) Console.WriteLine("I am replica: " + myUrl + " I am resending tuple: " + t.toString());
+                        processTuple(t);
+                    }
                 }
             }
         }
@@ -801,43 +807,44 @@ namespace Dadstorm
 
             foreach (string opx in OpsIds.ToArray())
             {
-                repInfo.SendInfoUrls.TryGetValue(opx, out urls);
-                if (urls.Count >= 1)
+                if (opx != null)
                 {
-                    last = false;
-                    sendTuplePolicy value;
-                    policies.TryGetValue(this.repInfo.Next_routing, out value);
-                    //Getting the OperatorServices object 
-                    try
+                    repInfo.SendInfoUrls.TryGetValue(opx, out urls);
+                    if (urls.Count >= 1)
                     {
-                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls, t));
-                        if (Comments) obj.ping("PING!");
-                        
-                        if (!resend && !RepInfo.Semantics.Equals("at-most-once"))
+                        last = false;
+                        sendTuplePolicy value;
+                        policies.TryGetValue(this.repInfo.Next_routing, out value);
+                        //Getting the OperatorServices object 
+                        try
                         {
-                            AddTupleToReceiveAck(t, resend);//Save tuple to receive ack stating if it is a resend or not
-                            foreach (string url2 in RepInfo.SiblingsUrls.ToArray())//share the acks that need to be received with its siblings
+                            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), value(urls, t));
+                            if (Comments) obj.ping("PING!");
+
+                            if (!resend && !RepInfo.Semantics.Equals("at-most-once"))
                             {
-                                if (!url2.Equals(RepInfo.MyUrl))
+                                AddTupleToReceiveAck(t, resend);//Save tuple to receive ack stating if it is a resend or not
+                                foreach (string url2 in RepInfo.SiblingsUrls.ToArray())//share the acks that need to be received with its siblings
                                 {
-                                    OperatorServices obj2 = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url2);
-                                    obj2.AddTupleToReceiveAck(t,resend);
-                                    Console.WriteLine("Added receive ack of tuple: " + t.toString() + " to the sibling: " + url2);
+                                    if (url2 != null && !url2.Equals(RepInfo.MyUrl))
+                                    {
+                                        OperatorServices obj2 = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url2);
+                                        obj2.AddTupleToReceiveAck(t, resend);
+                                        Console.WriteLine("Added receive ack of tuple: " + t.toString() + " to the sibling: " + url2);
+                                    }
                                 }
                             }
+                            if (!RepInfo.Semantics.Equals("at-most-once"))
+                            {
+                                obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Added tuple to be acked in the receiving replica
+                            }
+                            obj.AddTupleToBuffer(t);
                         }
-                        if (!RepInfo.Semantics.Equals("at-most-once"))
-                        {
-                            obj.AddTupleToBeAcked(t, RepInfo.MyUrl);//Added tuple to be acked in the receiving replica
+                        catch (System.Net.Sockets.SocketException e)
+                        {// if the other replica rejects the connection the tuple is not send and the timer will make this replica resend the tuple to one of the possible sending replicas
                         }
-                        obj.AddTupleToBuffer(t);
+
                     }
-                    catch(System.Net.Sockets.SocketException e)
-                    {// if the other replica rejects the connection the tuple is not send and the timer will make this replica resend the tuple to one of the possible sending replicas
-                    }
-
-
-
                 }
             }
             if (last)
@@ -998,14 +1005,14 @@ namespace Dadstorm
             {
                 foreach (Tuple t2 in ToReceiveAck.ToArray())
                 {
-                    if (t.Id.Equals(t2.Id))
+                    if (t2!=null && t.Id.Equals(t2.Id))
                     {
                         
                         ToReceiveAck.Remove(t);
                         removeRepTuple(t);//removes if exists the replica of a a tuple processed
                         foreach(TimerTuple t3 in TimerAck.ToArray())
                         {
-                            if (t.Id.Equals(t3.AckT.Id))
+                            if (t3!=null && t.Id.Equals(t3.AckT.Id))
                             {
                                 t3.Time.Dispose();
                                 TimerAck.Remove(t3);
@@ -1017,7 +1024,7 @@ namespace Dadstorm
                         {
                             foreach (string url in RepInfo.SiblingsUrls.ToArray())//removes replicated receive acks from siblings
                             {
-                                if (!url.Equals(RepInfo.MyUrl))
+                                if (url!=null && !url.Equals(RepInfo.MyUrl))
                                 {
                                     try
                                     {
@@ -1247,9 +1254,12 @@ namespace Dadstorm
                 
                 foreach (string url in me.ChildrensUrl.ToArray())
                 {
-                    try { 
-                        OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
-                        String ping = obj.getPing();
+                    try {
+                        if (url != null)
+                        {
+                            OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
+                            String ping = obj.getPing();
+                        }
                     }
                     catch (System.Net.Sockets.SocketException e)//if a children of a replica dies happens the following
                     {
@@ -1259,15 +1269,18 @@ namespace Dadstorm
                         string renewOpx = "";
                         foreach (string opx in me.OpsIds.ToArray())
                         {
-                            me.RepInfo.SendInfoUrls.TryGetValue(opx, out temp);
-                            foreach(string s in temp.ToArray())
+                            if (opx != null)
                             {
-                                if (s.Equals(url))
+                                me.RepInfo.SendInfoUrls.TryGetValue(opx, out temp);
+                                foreach (string s in temp.ToArray())
                                 {
-                                    temp.Remove(url);
-                                    renewList = temp;
-                                    renewOpx = opx;
-                                    break;
+                                    if (s != null && s.Equals(url))
+                                    {
+                                        temp.Remove(url);
+                                        renewList = temp;
+                                        renewOpx = opx;
+                                        break;
+                                    }
                                 }
                             }
                             
@@ -1299,7 +1312,7 @@ namespace Dadstorm
             {
                 foreach(string url in me.RepInfo.SiblingsUrls.ToArray())
                 {
-                    if (!url.Equals(me.RepInfo.MyUrl))
+                    if (url!=null && !url.Equals(me.RepInfo.MyUrl))
                     {
                         try { 
                             OperatorServices obj = (OperatorServices)Activator.GetObject(typeof(OperatorServices), url);
