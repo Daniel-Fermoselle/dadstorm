@@ -36,6 +36,7 @@ namespace Dadstorm
             }
         }
 
+        //Read the file and create the tuples
         public IList<Tuple> processFile()
         {
             readFile();

@@ -167,6 +167,9 @@ namespace Dadstorm
         /// </summary>
         private ArrayList replicatedTuples;
 
+        /// <summary>
+        /// This replica name, i.e This replica operator id plus replica index at the begining
+        /// </summary>
         private string operatorName;
 
         /// <summary>
@@ -541,7 +544,7 @@ namespace Dadstorm
                 if (t2 != null && t2.AckT.Id.Equals(t.Id))
                 {
                     Console.WriteLine("Going to remove the tuple from to be acked list : " + t.toString());
-                    ackTuple(t);//This might get confused when more than one OP is used as input to this operator
+                    ackTuple(t);
                     this.removeToBeAck(t2);
                     break;
                 }
@@ -586,7 +589,7 @@ namespace Dadstorm
                             break;
                         }
                     }
-                    catch(System.Net.Sockets.SocketException e)//It s only needed to receive at least one ack per operator i.e just one replica of an operator needs to receive the ack
+                    catch(System.Net.Sockets.SocketException e)//It is only needed to receive at least one ack per operator i.e just one replica of an operator needs to receive the ack
                     {
                         continue;
                     }
@@ -815,7 +818,7 @@ namespace Dadstorm
                     if (urls.Count >= 1)
                     {
                         last = false;
-                        sendTuplePolicy value;
+                        sendTuplePolicy value;//Delegate that will use the policy of the replica to calculate the outgoing replica for this tuple t
                         policies.TryGetValue(this.repInfo.Next_routing, out value);
                         //Getting the OperatorServices object 
                         try
@@ -956,7 +959,7 @@ namespace Dadstorm
         /// AddTupleToBeAcked inserts tuple in ToBeAcked.
         /// </summary>
         /// <param name="t">Tuple that will be acked</param>
-        public void AddTupleToBeAcked(Tuple t, string ackUrl)//Add tuple t to be acked to myUrl
+        public void AddTupleToBeAcked(Tuple t, string ackUrl)//Add tuple t to be acked
         {
             if (!RepInfo.Semantics.Equals("at-most-once"))
             {
@@ -975,7 +978,7 @@ namespace Dadstorm
             {
                 if (!resend)
                 {
-                    TimerMethod temptimer = new TimerMethod(ResendTuple);//Starts timer with timeout defined as a constant at the top of this file
+                    TimerMethod temptimer = new TimerMethod(ResendTuple);//Starts timer to resend tuple t with timeout defined as a constant at the top of this file
                     Timer stateTimer = new Timer(temptimer.ResendTupleMethod, t, TIMEOUT, TIMEOUT);
                     TimerTuple temp = new TimerTuple(t, stateTimer);
                     TimerAck.Add(temp);
@@ -1048,7 +1051,7 @@ namespace Dadstorm
         }
 
 
-        //If the routing of this replica is primary we want to share the readtuples var
+        //If the routing of this replica is primary we want to share the readtuples array
         //in order to have consistency while counting or check if a tuple is unique
         public void addTupleRead(Tuple t)
         {

@@ -102,6 +102,7 @@ namespace Dadstorm
             }
         }
 
+        //Gives the repInfo to each replica
         private void StartRepInfo()
         {
             foreach (string operator_id in config.Keys) {
@@ -129,6 +130,8 @@ namespace Dadstorm
             }
         }
 
+
+        //Gets the receiving urls of each replica, i.e the urls which will send to the each replica
         private void GetUrlsFrom()
         {
             foreach (string operator_id in config.Keys)
@@ -394,6 +397,7 @@ namespace Dadstorm
             return subDic;
         }
 
+        //Gives the urls from each replica of the operator with opID receive from
         public ArrayList getFromUrls(string opId)
         {
             ArrayList urls = new ArrayList();
@@ -403,7 +407,6 @@ namespace Dadstorm
             {
                 if (source.Contains(".dat"))
                 {
-                    //return null;//because the input is a file
                     urls.Add("File");
                     break;
                 }

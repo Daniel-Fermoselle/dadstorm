@@ -112,7 +112,7 @@ namespace Dadstorm
                         tuplesRead.Add(tuple);
 
                         if (!operatorService.RepInfo.Semantics.Equals("at-most-once"))
-                        {//If the routing of this replica is primary we want to share the readtuples var
+                        {//If the routing of this replica is primary we want to share the readtuples array
                          //in order to have consistency while counting or check if a tuple is unique
                             if (operatorService.RepInfo.Routing.Equals("primary"))
                             {
