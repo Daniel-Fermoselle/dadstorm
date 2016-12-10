@@ -24,18 +24,24 @@
 
 \begin{abstract}
 DADSTORM is a simple but reliable stream processing system. It's mainly used by Instituto Superior Tecnico Students.
-\\The main features are: the 3 possible semantics of tuple processing it can have, fault-tolerance to f+1 faults per operator with a synchronous model of detection, 3 modes of tuple routing and last but the not the least 
+\\The main features are: the 3 possible semantics of tuple processing it can have, fault-tolerance to f faults per operator with a synchronous model of detection, 3 modes of tuple routing and last but the not the least 
 5 types of operators.
 This system is composed by a Puppet Master, Process Creation Service, Operators with their Replicas, Tuples and ThreadPools.
 \end{abstract}
 
 %------------------------------------
 \section{Introduction}
-Nowadays while streaming more and more information is added and we want to process it as fast as possible as well as to get the desired information even though existing the possibility of existing faults. 
-In order to get that information in a reliable way we developed DADSTORM. Our system process tuples based on the type of operator
+Nowadays while streaming more and more information is added and we want to process it as fast as possible as well as to get the desired information even though existing the possibility of having faults. 
+In order to get that information in a reliable way we developed DADSTORM. Our system process tuples based on the type of operator which can be UNIQ, COUNT, DUP, FILTER and CUSTOM.
 
 %------------------------------------
 \section{Programming Model}
+In this section, we provide a high-level overview of the programming model, highlighting the key concepts. 
+\\In DADSTORM data is represented as string Tuples, i.e, a collection of strings.
+\\To begin with we have a puppet master who will start all the operators on all the machines with the help of the process creation service this last will already be located in all the machines that will run operator replicas.
+\\The puppet master has an intuitive interface inside which we have a box where we can introduce a path to a configuration file to start all the operator replicas as well has their inputs, routing, operator spec and address.
+\\The tuples are stored inside a file that will be accessed by the first operator of the stream. The operator are composed by repicas which can be located inside different machines.
+\\All the replicas might fail but we assure f fault tolerance to silent failures but we assume that none of the first operator replicas can fail and that at least there is one replica alive per operator to guarantee that we have at least f+1 replicas.
 
 
 
@@ -62,7 +68,7 @@ In order to get that information in a reliable way we developed DADSTORM. Our sy
 
 
 %------------------------------------
-\subsection{Puppet Master}
+\subsection{RepInfo}
 
 
 
@@ -70,7 +76,7 @@ In order to get that information in a reliable way we developed DADSTORM. Our sy
 
 
 %------------------------------------
-\subsection{Process Creation Service}
+\subsection{ConfigInfo}
 
 
 
