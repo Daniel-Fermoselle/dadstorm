@@ -47,8 +47,8 @@ In this section, we provide a high-level overview of the programming model, high
 \end{figure}
 \\The tuples are stored inside a file that will be accessed by the first operator of the stream. The operators are composed by replicas which can be located inside different machines.
 \\All the replicas might fail but we assure f fault tolerance to silent failures for each operator. We assume that none of the first operator replicas can fail and that there is at least one replica alive per operator, in order to guarantee that to be possible we have to have at least f+1 replicas for each operator, being f the number of fautls of each operator.
-\\A quick overall. So first of all we start the puppet master which will through the configuration file introduced and with the help of the process creation service create all the operator's replicas. Then the replicas of the first operator will read the .dat file which has the begining tuples to be processed. After this initialization all the replicas will receive tuples and process them, sending the result to the next operators, unless it is a replica of the last operator this one don't send anything just processes tuples.
-\\To finish this section the user of our system doesn't have to worry about how the system is distributing the operations, the user just has to create the configuration file and let the puppet master read then just execute and all the data will be processed, getting in the end the desired information.
+\\A quick overall. So first of all we start the puppet master which will through the configuration file introduced and with the help of the process creation service create all the operator's replicas. Then the replicas of the first operator will read the .dat file which has the begining tuples to be processed. After this initialization all the replicas will receive tuples and process them, sending the result to the next operators, unless it is a replica of the last operator this one doesn't send anything, it just processes tuples.
+\\To finish this section the user of our system doesn't have to worry about how the system is distributing the operations, the user just has to create the configuration file and let the puppet master read it, then just execute and all the data will be processed, getting in the end the desired information.
 
 
 
@@ -60,11 +60,11 @@ In this section we will talk a little bit about the abstractions we created for 
 
 %------------------------------------
 \subsection{Tuple}
-Tuple, this is one of the most important abstractions of our system if not the most one. The Tuple is a possible infinite collection of strings, it also has a unique id to be used when the tuple processing semantics requires so. The tuples are processed and when this happen it is created another tuple having as content the result of processing the previous tuple. 
+Tuple, this is one of the most important abstractions of our system if not the most one. The Tuple is a possible infinite collection of strings, it also has a unique id to be used when the tuple processing semantics requires so. The tuples are processed and when this happens it is created another tuple having as content the result of processing the previous tuple. 
 \\To help mostly the processing semantics we created also 3 more variations of the tuple, which are: AckTuple, TimerTuple and Tuple2TupleProcessed. 
 \\The AckTuple is no more than a tuple associated with the url of the replica who sent the tuple this url can be used in the future. 
 \\The TimerTuple is a tuple associated with a timer of the limit the tuple has to be acked otherwise it'll be resent. 
-\\Last but not the list there is the Tuple2TupleProcessed this abstraction contains 2 tuples, the first tuple when processed by some replica generates the second tuple, this association can be useful first to compare if the tuple was already processed and then to return the result of processing the first tuple if necessary.
+\\Last but not the least there is the Tuple2TupleProcessed this abstraction contains 2 tuples, the first tuple when processed by some replica generates the second tuple, this association can be useful first to compare if the tuple was already processed and then to return the result of processing the first tuple if necessary.
 
 
 
@@ -114,7 +114,7 @@ In this section we will describe in more detail what each component of the archi
 
 %------------------------------------
 \subsection{Tuple}
-As said in section 3.1 the tuple is the base of our whole system. The tuple contains a collection of string s and an unique id, this id is composed by the operator name concatenated with the replica index plus an unique id inside that replica. This first basic tuple is sent between replicas and gets changed every time it's processed. The AckTuple is the first sub-type of tuples and each operator saves an array list with this object until the tuple is acked, this sub-type plus the TimerAck which has the timer to receive ack before resend the tuple work together to guarantee that the tuple is at least received once. Now the last sub-type of tuple is Tuple2TupleProcessed this tuple saves the pair <Tuple, TupleProcessed> and it's used as a method to let the replica know if the tuple was already processed comparing the id's of the tuple receive and all the pairs Tuple2TupleProcessed saved in an array in each replica.
+As said in section 3.1 the tuple is the base of our whole system. The tuple contains a collection of strings and an unique id, this id is composed by the operator name concatenated with the replica index plus an unique id inside that replica. This first basic tuple is sent between replicas and gets changed every time it's processed. The AckTuple is the first sub-type of tuples and each operator saves an array list with this object until the tuple is acked, this sub-type plus the TimerAck which has the timer to receive ack before resend the tuple work together to guarantee that the tuple is at least received once. Now the last sub-type of tuple is Tuple2TupleProcessed this tuple saves the pair \textless Tuple, TupleProcessed\textgreater and it's used as a method to let the replica know if the tuple was already processed comparing the id's of the tuple receive and all the pairs Tuple2TupleProcessed saved in an array in each replica.
 
 
 
@@ -123,10 +123,10 @@ As said in section 3.1 the tuple is the base of our whole system. The tuple cont
 The notion of operator is as said before a little bit abstracted as a collection of replicas, that being said in this subsection we will only talk about replicas. 
 \\The key of the replicas is to mantain state as well as tracking all the tuples.
 \\Replicas are implemented as object which have a few structures inside: one threadpool, one RepInfo, one status and a few array lists that will be explained in the end of this sub-section.
-\\First of all the threadpool, this atribute mantains a reference to access the replica threadpool that has 2 threads: one to read and process and another to send tuples. Each of this threads has a circular buffer where the tuples are stored while waiting to be consumed. When the circular buffer gets full it will block until there is a consume. One of the threads will be constantly running a ConsumeRead method that consumes tuples from the circular buffer reads it and with the replica operator spec processes it, after that, the tuple is sent to the circular buffer of the thread which is always running a ConsumeProcessed method, this thread will take a tuple from its circular buffer and with the replica is going to send to the right next replica.
-\\The RepInfo this structure has a lot of information for one replica(this replica), more specifically: \textbf{routing}, the type of routing for this replica, \textbf{routingParam}, the parameters of the tuple to in which the routing will be applied in this replica, \textbf{nextRouting}, the type of reouting for the possible next replicas, \textbf{nextRoutingParam},the parameters of the tuple to in which the routing will be applied in the possible next replicas, \textbf{operatorSpec}, the type of this replica operator, \textbf{operatorParam}, the parameters of the tuple on which this replica operatorSpec will be applied, \textbf{sendInfoUrls}, the urls of the next replicas, \textbf{port}, this replica port, \textbf{loggingLvl},the type of logging that the system is configured for, \textbf{input}, the input operators or file of this replica, this is mainly used to get the file.dat, \textbf{pmsUrl}, the url of the puppet master, \textbf{siblingsUrls},the urls of the other replicas of the same operator,  \textbf{myUrl}, the url of this replica,   \textbf{semantics}, the semantics the system in running,  \textbf{receiveInfoUrls}, the urls of the replicas which can send tuples to this replica, \textbf{operatorId} the id of this replica's operator. With all this information the system can know which replicas should have the copy of the state in case of failure (siblings), which replicas will receive the tuples processed (sendInfoUrls), the type of operator (operator spec).
+\\First of all the threadpool, this atribute mantains a reference to access the replica threadpool that has 2 threads: one to read and process and another to send tuples. Each of this threads has a circular buffer where the tuples are stored while waiting to be consumed. When the circular buffer gets full it will block the reception until there is a consume action. One of the threads will be constantly running a ConsumeRead method that consumes tuples from the circular buffer reads it and with the replica operator spec processes it, after that, the tuple is sent to the circular buffer of the thread which is always running a ConsumeProcessed method, this thread will take a tuple from its circular buffer and with the replica is going to send to the right next replica.
+\\The RepInfo this structure has a lot of information for one replica(this replica), more specifically: \textbf{routing}, the type of routing for this replica, \textbf{routingParam}, the parameters of the tuple to which the routing will be applied in this replica, \textbf{nextRouting}, the type of routing for the possible next replicas, \textbf{nextRoutingParam},the parameters of the tuple to in which the routing will be applied in the possible next replicas, \textbf{operatorSpec}, the type of this replica operator, \textbf{operatorParam}, the parameters of the tuple on which this replica operatorSpec will be applied, \textbf{sendInfoUrls}, the urls of the next replicas, \textbf{port}, this replica port, \textbf{loggingLvl},the type of logging that the system is configured for, \textbf{input}, the input operators or file of this replica, this is mainly used to get the file.dat, \textbf{pmsUrl}, the url of the puppet master, \textbf{siblingsUrls},the urls of the other replicas of the same operator,  \textbf{myUrl}, the url of this replica,   \textbf{semantics}, the semantics the system in running,  \textbf{receiveInfoUrls}, the urls of the replicas which can send tuples to this replica, \textbf{operatorId} the id of this replica's operator. With all this information the system can know which replicas should have the copy of the state in case of failure (siblings), which replicas will receive the tuples processed (sendInfoUrls), the type of operator (operator spec).
 \\The status of a replica indicates if it's working or not and there is also information about the replica being frozen.
-
+\\ArrayLists ...
 
 
 
@@ -134,21 +134,23 @@ The notion of operator is as said before a little bit abstracted as a collection
 
 %------------------------------------
 \subsection{Puppet Master}
-
-
+The puppet master provides an interface between the system and the user
+//TODO WHAT TO SAY
 
 
 
 
 %------------------------------------
 \subsection{Process Creation Service}
-
+The process creation service was created just to allow the puppet master to contact him through the shared common class which allow the puppet master to create the replicas of the operators in the machines where the process creation service is running.
 
 
 
 %------------------------------------
 \subsection{Failure Recovery}
-
+Our system as already said has f+1 replicas per operator in order to guarantee faul-tolerance to f silent failures. This is guaranteed in a synchronous model because each replica has two timers, one that every 12 seconds sends a ping to the replica siblings, i.e the replicas that are part of the same operator, and another that every 12 seconds sends a ping to the replica children, i.e the replicas that receive tuples from this one.
+\\If the first ping doesn't get response from one sibling that sibling is removed from the list and all the tuples that were being saved in shared array of replicated tuples are reprocessed and sent to the right receiving operator's replica.
+\\Now about the second timer, if a child doesn't ping back it's simply removed from the possible sendInfoUrl, i.e the possible urls of replicas that can receive tuples from this one, in order to forbid the sender to wrongly send tuples to a dead replica.
 
 
 
