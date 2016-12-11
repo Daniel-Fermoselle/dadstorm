@@ -56,37 +56,48 @@ In this section we will talk a little bit about the abstractions we created for 
 
 %------------------------------------
 \subsection{Tuple}
-Tuple, this is one of the most important abstractions of our system if not the most one. The Tuple is a possible infinite collection of strings, it also has a unique id to be used when the tuple processing semantics requires so. The tuples are processed and when this happen it is created another tuple having as content the result of processing the previous tuple. To help mostly the processing semantics we created also 3 more variations of the tuple, which are: AckTuple, TimerTuple and Tuple2TupleProcessed. The AckTuple is no more than a tuple associated with the url of the replica who sent the tuple this url can be used in the future. The TimerTuple is a tuple associated with a timer of the limit the tuple has to be acked otherwise it'll be resent. Last but not the list there is the Tuple2TupleProcessed this abstraction contains 2 tuples, the first tuple when processed by some replica generates the second tuple, this association can be useful first to compare if the tuple was already processed and then to return the result of processing the first tuple if necessary.
+Tuple, this is one of the most important abstractions of our system if not the most one. The Tuple is a possible infinite collection of strings, it also has a unique id to be used when the tuple processing semantics requires so. The tuples are processed and when this happen it is created another tuple having as content the result of processing the previous tuple. 
+\\To help mostly the processing semantics we created also 3 more variations of the tuple, which are: AckTuple, TimerTuple and Tuple2TupleProcessed. 
+\\The AckTuple is no more than a tuple associated with the url of the replica who sent the tuple this url can be used in the future. 
+\\The TimerTuple is a tuple associated with a timer of the limit the tuple has to be acked otherwise it'll be resent. 
+\\Last but not the list there is the Tuple2TupleProcessed this abstraction contains 2 tuples, the first tuple when processed by some replica generates the second tuple, this association can be useful first to compare if the tuple was already processed and then to return the result of processing the first tuple if necessary.
 
 
 
 %------------------------------------
 \subsection{Operators and Replicas}
-
-
+In this section we will talk mostly about replicas because they are simply what an operator is.
+\\A replica basically is an object that reads tuples from possibly infinite inputs, processes and finally sends them to the next replicas in the chain.
+\\Each replica has a thread pool which will have 2 threads one for reading tuples and processing them and another thread to send the processed tuples to the next replicas. Each thread has a circular buffer in which the tuples will be waiting to be read and processed or sent. The replicas also have a RepInfo that will be defined below. A replica also has a status, 
+\\TODO FINISH
 
 
 
 %------------------------------------
 \subsection{Parser}
-
-
+The parser is an abstraction used by the puppet master in order to process the configuration file, this parser receives the path to the configuration file and gives to the puppet master an array of ConfigInfo with all the information of the operators and its replicas as well as the list of commands that the puppet master will have to execute.
+\\TODO VERIFICAR
 
 
 
 %------------------------------------
 \subsection{RepInfo}
-
-
+RepInfo is an abstraction that basically gives all the information that a replica of an operator has to know. It has the notion of replica routing, its parameters as well as the urls of the replicas to which will be sent tuples, the url of the replica, the operator spec i.e what operation the replica will perform, the id of the replica, the sibling replicas i.e the replicas from the same operator. 
+\\In short the RepInfo has all the information that a replica needs to know.
+\\TODO SERA NECESSARIO ADICIONAR MAIS COISAS?
 
 
 
 
 %------------------------------------
 \subsection{ConfigInfo}
+This abstraction is almost the same as the RepInfo but for the puppet master. It's through the ConfigInfo that the puppet master can know how to start the replicas with which properties that in the correct time will be sent to the replicas inside the RepInfo
 
 
 
+%------------------------------------
+\subsection{Failure Recovery}
+To guarantee failure recovery some of the previous abstractions will be used, but how this is done will be explained in section 4. Some recovery techniques use the Timer Tuples as well as the RepInfo as we will see below.
 
 
 
