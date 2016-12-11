@@ -149,7 +149,7 @@ The process creation service was created just to allow the puppet master to cont
 %------------------------------------
 \subsection{Failure Recovery}
 Our system as already said has f+1 replicas per operator in order to guarantee faul-tolerance to f silent failures. This is guaranteed in a synchronous model because each replica has two timers, one that every 12 seconds sends a ping to the replica siblings, i.e the replicas that are part of the same operator, and another that every 12 seconds sends a ping to the replica children, i.e the replicas that receive tuples from this one.
-\\If the first ping doesn't get response from one sibling that sibling is removed from the list and all the tuples that were being saved in shared array of replicated tuples are reprocessed and sent to the right receiving operator's replica.
+\\If the first timer ping doesn't get response from one sibling that sibling is removed from the list and all the tuples that were being saved in shared array of replicated tuples are reprocessed by the replica that should after the death of the other reprocess the tuples and sent to the right receiving operator's replica.
 \\Now about the second timer, if a child doesn't ping back it's simply removed from the possible sendInfoUrl, i.e the possible urls of replicas that can receive tuples from this one, in order to forbid the sender to wrongly send tuples to a dead replica.
 
 
@@ -171,7 +171,8 @@ Our system as already said has f+1 replicas per operator in order to guarantee f
 
 %------------------------------------
 \section{Evaluation}
-
+Since we finished the project we tested a few cases. First we tested a normal run, without failures neither freezes, using at most once semantics which took 7 seconds to finish with correct result, the at least once took 13 seconds to finish with correct result and the exactly once last for 12 seconds to finish with correct result. Then we tested with failures and freezes and we get these values, using at most once it took 10 seconds and didn't process some tuples, using at least once lasted for 1 minute and 13 seconds to finish with some tuples being sent more than once, exactly once took 50 seconds to finish but processed exactly once each tuple that needed to.
+\\With the above evaluation we reached the conclusion that as expected with failures all semantics take longer and that the exactly once semantic grants us a good compromise between time and assurance.
 
 
 
