@@ -10,7 +10,6 @@
 \usepackage{times}
 \usepackage[utf8]{inputenc}
 
-\rfoot{Page \thepage \hspace{1pt} of \pageref{LastPage}} %Talvez tire a numeracao tendo em conta que eles nao a poe no template
 
 \title{DADSTORM\\A simple, fault-tolerant and real-time stream processing system}
 \author{DAD 2016-2017\\ Group 12:
@@ -72,8 +71,11 @@ Tuple, this is one of the most important abstractions of our system if not the m
 \subsection{Operators and Replicas}
 In this section we will talk mostly about replicas because they are simply what an operator is.
 \\A replica basically is an object that reads tuples from possibly infinite inputs, processes and finally sends them to the next replicas in the chain.
-\\Each replica has a thread pool which will have 2 threads one for reading tuples and processing them and another thread to send the processed tuples to the next replicas. Each thread has a circular buffer in which the tuples will be waiting to be read and processed or sent. The replicas also have a RepInfo that will be defined below. A replica also has a status, 
-\\TODO FINISH
+\\Each replica has a thread pool which will have 2 threads one for reading tuples and processing them and another thread to send the processed tuples to the next replicas. Each thread has a circular buffer in which the tuples will be waiting to be read and processed or sent. The replicas also have a RepInfo that will be defined below this structure is very important for the replica.
+\\Replicas have a few fundamental functions: Start, processTuple, SendTuple.
+\\\textbf{Start(RepInfo info)}: Start is the function that allows the replica to start it gets as argument a RepInfo that will be the replica RepInfo. This function starts all the failure detection timers as well as the most important lists, also if the replica is one of the first operators replica it will read tuples from the .dat file and process them.
+\\\textbf{processTuple(Tuple t)}: This function receives a tuple t as argument and will process it with the operator spec of the replica adding the tuple t or the result of processing to a list of acks or replication if necessary. In the end of processing it the result will be put in the circular buffer of the processed tuples in order to be then send.
+\\\textbf{SendTuple(Tuple t, bool resend}: This function receives a tuple t and a boolean resend, the tuple is the tuple that will be send accordingly to the sending policy of the next operator's replicas, the boolean resend indicates if this tuple is being send for the first time or not if it is some lists of tuples that need to be ack will not be updated.
 
 
 
@@ -126,7 +128,11 @@ The notion of operator is as said before a little bit abstracted as a collection
 \\First of all the threadpool, this atribute mantains a reference to access the replica threadpool that has 2 threads: one to read and process and another to send tuples. Each of this threads has a circular buffer where the tuples are stored while waiting to be consumed. When the circular buffer gets full it will block the reception until there is a consume action. One of the threads will be constantly running a ConsumeRead method that consumes tuples from the circular buffer reads it and with the replica operator spec processes it, after that, the tuple is sent to the circular buffer of the thread which is always running a ConsumeProcessed method, this thread will take a tuple from its circular buffer and with the replica is going to send to the right next replica.
 \\The RepInfo this structure has a lot of information for one replica(this replica), more specifically: \textbf{routing}, the type of routing for this replica, \textbf{routingParam}, the parameters of the tuple to which the routing will be applied in this replica, \textbf{nextRouting}, the type of routing for the possible next replicas, \textbf{nextRoutingParam},the parameters of the tuple to in which the routing will be applied in the possible next replicas, \textbf{operatorSpec}, the type of this replica operator, \textbf{operatorParam}, the parameters of the tuple on which this replica operatorSpec will be applied, \textbf{sendInfoUrls}, the urls of the next replicas, \textbf{port}, this replica port, \textbf{loggingLvl},the type of logging that the system is configured for, \textbf{input}, the input operators or file of this replica, this is mainly used to get the file.dat, \textbf{pmsUrl}, the url of the puppet master, \textbf{siblingsUrls},the urls of the other replicas of the same operator,  \textbf{myUrl}, the url of this replica,   \textbf{semantics}, the semantics the system in running,  \textbf{receiveInfoUrls}, the urls of the replicas which can send tuples to this replica, \textbf{operatorId} the id of this replica's operator. With all this information the system can know which replicas should have the copy of the state in case of failure (siblings), which replicas will receive the tuples processed (sendInfoUrls), the type of operator (operator spec).
 \\The status of a replica indicates if it's working or not and there is also information about the replica being frozen.
-\\ArrayLists ...
+\\Each replica has a few
+\\A very important part of the replicas is how do they react to the different semantics. We have 3 semantics: at most once, at least once and exactly once.
+\\\textbf{At most once}: This semantic doesn't need any other kind of structures or treatment to deal with because if the tuple was not sent or processed there is no problem.
+\\\textbf{At least once}: When dealing with this semantic it gets trickier because we need to guarantee the tuple is at least sent one time. So to solve this issue everytime we send a tuple in the sender replica we add the tuple to a list that is ToReceiveAck, this list tracks all the tuples that need to receive an ack, also, we add the tuple to a list which is TimerAck combined with a timer which is programmed to after 10 seconds resend the tuple if an ack for that tuple wasn't received, when the sender replica receives the ack for that tuple the timer is disposed and the tuple removed from the ToReceiveAck list. Now about the receiver, when the sender, sends the replica it also adds to a list (ToBeAcked) in the receiving replica the tuple sent plus the url which sent the tuple, when this replica processes the tuple it sends an ack to one replica of the previous operator, this ack will then be propagated inside the operator to reach every replica and ack the tuple on all of them, also after processing the tuple the receiving replica will remove the tuple from the ToBeAcked list, as the tuple was already acked.
+\\\textbf{Exactly once}: Regarding know with this semantics all of what was said to at least once is applied to this semantics but with more. In this semantic everytime a tuple is being processed it is checked if it was already processed, if not then the tuple and the result of processing it is combined(Tuple2TupleProcessed) and added to a list(TupleToTupleProcessed) and propagated to the replica siblings, if the tuple was already processed then the tuple is rejected and not processed again.
 
 
 
@@ -134,7 +140,8 @@ The notion of operator is as said before a little bit abstracted as a collection
 
 %------------------------------------
 \subsection{Puppet Master}
-The puppet master provides an interface between the system and the user
+The puppet master provides an interface between the system, the replicas and the user.
+The puppet master 
 //TODO WHAT TO SAY
 
 
